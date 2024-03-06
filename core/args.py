@@ -1,0 +1,90 @@
+import argparse
+
+from core import conf, log
+from core.log import setup_logger
+from model.net import Request
+import re
+
+logger = setup_logger(__name__)
+def parse() -> Request:
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-u', '--url', help='url', dest='target')
+    parser.add_argument('--data', help='post data', dest='paramData')
+    parser.add_argument('-e', '--encode', help='encode payloads', dest='encode')
+    parser.add_argument('--fuzzer', help='fuzzer', dest='fuzz', action='store_true')
+    parser.add_argument('--update', help='update', dest='update', action='store_true')
+    parser.add_argument('--timeout', help='timeout', dest='timeout', type=int, default=conf.timeout)
+    parser.add_argument('--proxy', help='use prox(y|ies)', dest='proxy', action='store_true')
+    parser.add_argument('--crawl', help='crawl', dest='recursive', action='store_true')
+    parser.add_argument('--json', help='treat post data as json', dest='jsonData', action='store_true')
+    parser.add_argument('--path', help='inject payloads in the path', dest='path', action='store_true')
+    parser.add_argument('--seeds', help='load crawling seeds from a file', dest='args_seeds')
+    parser.add_argument('-f', '--file', help='load payloads from a file', dest='args_file')
+    parser.add_argument('-l', '--level', help='level of crawling', dest='level', type=int, default=2)
+    parser.add_argument('--headers', help='add headers', dest='add_headers', nargs='?', const=True)
+    parser.add_argument('-t', '--threads', help='number of threads', dest='threadCount', type=int,
+                        default=conf.threadCount)
+    parser.add_argument('-d', '--delay', help='delay between requests', dest='delay', type=int,
+                        default=conf.delay)
+    parser.add_argument('--skip', help='don\'t ask to continue', dest='skip', action='store_true')
+    parser.add_argument('--skip-dom', help='skip dom checking', dest='skipDOM', action='store_true')
+    parser.add_argument('--blind', help='inject blind XSS payload while crawling', dest='blindXSS', action='store_true')
+    parser.add_argument('--console-log-level', help='Console logging level', dest='console_log_level',
+                        default=log.console_log_level, choices=log.log_config.keys())
+    parser.add_argument('--file-log-level', help='File logging level', dest='file_log_level',
+                        choices=conf.log_config.keys(), default=None)
+    parser.add_argument('--log-file', help='Name of the file to log', dest='log_file', default=conf.log_file)
+    args = parser.parse_args()
+
+    conf.console_log_level = args.console_log_level
+    conf.file_log_level = args.file_log_level
+    conf.log_file = args.log_file
+    conf.globalVariables = args
+
+    request = Request()
+    parseHeader(request)
+    parseUrl(request)
+    return request
+
+
+# parse the command-line header into request's header member
+def parseHeader(request: Request):
+    args = conf.globalVariables
+    if type(args.add_headers) is bool:
+        pass
+        # headers = extractHeaders(prompt())
+    elif type(args.add_headers) is str:
+        request.header = strToDic(args.add_headers)
+    else:
+        request.header = conf.headers
+
+
+def strToDic(headers):
+    headers = headers.replace('\\n', '\n')
+    sorted_headers = {}
+    matches = re.findall(r'(.*):\s(.*)', headers)
+    for match in matches:
+        header = match[0]
+        value = match[1]
+        try:
+            if value[-1] == ',':
+                value = value[:-1]
+            sorted_headers[header] = value
+        except IndexError:
+            pass
+    return sorted_headers
+
+
+def parseUrl(request: Request):
+    # url
+    request.url = conf.globalVariables.target
+    # params
+    url = request.url
+    if url:
+        params = dict()
+        parts = url.split('/')[3:]
+        for part in parts:
+            params[part] = ""
+        request.params = params
+    else:
+        logger.error("url can't be null")
