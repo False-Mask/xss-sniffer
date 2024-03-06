@@ -6,6 +6,8 @@ from model.net import Request
 import re
 
 logger = setup_logger(__name__)
+
+
 def parse() -> Request:
     parser = argparse.ArgumentParser()
     parser.add_argument('-u', '--url', help='url', dest='target')
@@ -42,14 +44,15 @@ def parse() -> Request:
     conf.globalVariables = args
 
     request = Request()
-    parseHeader(request)
-    parseUrl(request)
+    initRequest(request)
     return request
 
 
-# parse the command-line header into request's header member
-def parseHeader(request: Request):
+def initRequest(request: Request):
     args = conf.globalVariables
+    # make sure the http method type
+    request.method = True if args.paramData else False
+    # parse header
     if type(args.add_headers) is bool:
         pass
         # headers = extractHeaders(prompt())
@@ -57,6 +60,30 @@ def parseHeader(request: Request):
         request.header = strToDic(args.add_headers)
     else:
         request.header = conf.headers
+    # rawUrl
+    request.rawUrl = conf.globalVariables.target
+    # check
+    if not request.rawUrl:
+        logger.error("url can't be null")
+        return
+
+    split = request.rawUrl.split('?')
+
+    # url & params
+    request.url = split[0]  # url
+    params = dict()
+    parts = split[1].split('&')
+    for part in parts:
+        kv = part.split('=')
+        if len(kv) < 2:
+            kv.append('')
+        params[kv[0]] = kv[1]
+    request.params = params
+    # timeout
+    request.timeout = args.timeout
+    # delay
+    request.delay = args.delay
+#     TODO data
 
 
 def strToDic(headers):
@@ -73,18 +100,3 @@ def strToDic(headers):
         except IndexError:
             pass
     return sorted_headers
-
-
-def parseUrl(request: Request):
-    # url
-    request.url = conf.globalVariables.target
-    # params
-    url = request.url
-    if url:
-        params = dict()
-        parts = url.split('/')[3:]
-        for part in parts:
-            params[part] = ""
-        request.params = params
-    else:
-        logger.error("url can't be null")

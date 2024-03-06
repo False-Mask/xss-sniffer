@@ -238,7 +238,7 @@ def deJSON(data):
 
 
 def getVar(name):
-    return core.config.globalVariables[name]
+    return core.conf.globalVariables[name]
 
 def updateVar(name, data, mode=None):
     if mode:
