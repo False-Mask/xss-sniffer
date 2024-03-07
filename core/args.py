@@ -2,6 +2,7 @@ import argparse
 
 import core.conf
 from core import conf, log
+from core.encoders import base64
 from core.log import setup_logger
 from model.net import Request
 from model.opt import CmdOpt
@@ -60,7 +61,7 @@ def initCmdOpt(cmd: CmdOpt, req:Request):
     cmd.req = req
     cmd.skip = args.skip
     cmd.skipDOM = args.skipDOM
-    cmd.encoding = args.encode
+    cmd.encoding = base64 if args.encode and args.encode == 'base64' else False
 
 
 def initRequest(request: Request):
