@@ -12,6 +12,7 @@ from core.requester import requester
 from core.utils import getUrl, getParams
 from core.log import setup_logger
 from enum import Enum
+from model.opt import CmdOpt
 import re
 
 logger = setup_logger(__name__)
@@ -22,7 +23,6 @@ class Mode(Enum):
     BRUTE_FORCER = 2
     NORMAL = 3
     SCRAWL = 4
-
 
 
 def scan(mode: Mode):
@@ -64,19 +64,18 @@ def singleFuzz(target, paramData, encoding, headers, delay, timeout):
                delay, timeout, encoding)
 
 
-def scan(target, paramData, encoding, headers, delay, timeout, skipDOM, skip):
-    GET, POST = (False, True) if paramData else (True, False)
-    # If the user hasn't supplied the root url with http(s), we will handle it
-    if not target.startswith('http'):
-        try:
-            response = requester('https://' + target, {},
-                                 headers, GET, delay, timeout)
-            target = 'https://' + target
-        except:
-            target = 'http://' + target
+def scan(cmd: CmdOpt):
+    req = cmd.req
+    method = req.method
+    target = req.rawUrl
+    url = req.url
+    params = req.params
+    skipDOM = cmd.skipDOM
+    encoding = cmd.encoding
     logger.debug('Scan target: {}'.format(target))
-    response = requester(target, {}, headers, GET, delay, timeout).text
-
+    response = requester(req).text
+    skip = cmd.skip
+    # dom
     if not skipDOM:
         logger.run('Checking for DOM vulnerabilities')
         highlighted = dom(response)
@@ -87,41 +86,35 @@ def scan(target, paramData, encoding, headers, delay, timeout, skipDOM, skip):
                 logger.no_format(line, level='good')
             logger.red_line(level='good')
     host = urlparse(target).netloc  # Extracts host out of the url
+    # log ==> scan
     logger.debug('Host to scan: {}'.format(host))
-    url = getUrl(target, GET)
     logger.debug('Url to scan: {}'.format(url))
-    params = getParams(target, paramData, GET)
     logger.debug_json('Scan parameters:', params)
+    # log ==> scan
+
     if not params:
         logger.error('No parameters to test.')
         quit()
-    # WAF = wafDetector(
-    #     url, {list(params.keys())[0]: xsschecker}, headers, GET, delay, timeout)
-    # if WAF:
-    #     logger.error('WAF detected: %s%s%s' % (green, WAF, end))
-    # else:
-    #     logger.good('WAF Status: %sOffline%s' % (green, end))
-
     for paramName in params.keys():
-        paramsCopy = copy.deepcopy(params)
+        cmdCopy = copy.deepcopy(cmd)
         logger.info('Testing parameter: %s' % paramName)
         if encoding:
-            paramsCopy[paramName] = encoding(xsschecker)
+            cmdCopy.req.params[paramName] = encoding(xsschecker)
         else:
-            paramsCopy[paramName] = xsschecker
-        response = requester(url, paramsCopy, headers, GET, delay, timeout)
+            cmdCopy.req.params[paramName] = xsschecker
+
+        response = requester(cmdCopy.req)
         occurences = htmlParser(response, encoding)
         positions = occurences.keys()
         logger.debug('Scan occurences: {}'.format(occurences))
         if not occurences:
             logger.error('No reflection found')
-            continue
+            # continue
         else:
             logger.info('Reflections found: %i' % len(occurences))
 
         logger.run('Analysing reflections')
-        efficiencies = filterChecker(
-            url, paramsCopy, headers, GET, delay, occurences, timeout, encoding)
+        efficiencies = filterChecker(cmdCopy, occurences)
         logger.debug('Scan efficiencies: {}'.format(efficiencies))
         logger.run('Generating payloads')
         vectors = generator(occurences, response.text)
@@ -140,10 +133,9 @@ def scan(target, paramData, encoding, headers, delay, timeout, skipDOM, skip):
                 loggerVector = vect
                 progress += 1
                 logger.run('Progress: %i/%i\r' % (progress, total))
-                if not GET:
+                if not method:
                     vect = unquote(vect)
-                efficiencies = checker(
-                    url, paramsCopy, headers, GET, delay, vect, positions, timeout, encoding)
+                efficiencies = checker(cmdCopy, vect, positions)
                 if not efficiencies:
                     for i in range(len(occurences)):
                         efficiencies.append(0)
@@ -185,16 +177,18 @@ def dom(response):
                     for part in parts:
                         for controlledVariable in allControlledVariables:
                             if controlledVariable in part:
-                                controlledVariables.add(re.search(r'[a-zA-Z$_][a-zA-Z0-9$_]+', part).group().replace('$', '\$'))
+                                controlledVariables.add(
+                                    re.search(r'[a-zA-Z$_][a-zA-Z0-9$_]+', part).group().replace('$',  '\$'))
                 pattern = re.finditer(sources, newLine)
                 for grp in pattern:
                     if grp:
                         source = newLine[grp.start():grp.end()].replace(' ', '')
                         if source:
                             if len(parts) > 1:
-                               for part in parts:
+                                for part in parts:
                                     if source in part:
-                                        controlledVariables.add(re.search(r'[a-zA-Z$_][a-zA-Z0-9$_]+', part).group().replace('$', '\$'))
+                                        controlledVariables.add(
+                                            re.search(r'[a-zA-Z$_][a-zA-Z0-9$_]+', part).group().replace('$', '\$'))
                             line = line.replace(source, yellow + source + end)
                 for controlledVariable in controlledVariables:
                     allControlledVariables.add(controlledVariable)
@@ -219,7 +213,3 @@ def dom(response):
         return highlighted
     else:
         return []
-
-
-
-

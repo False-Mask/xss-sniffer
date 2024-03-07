@@ -1,14 +1,16 @@
 import argparse
 
+import core.conf
 from core import conf, log
 from core.log import setup_logger
 from model.net import Request
+from model.opt import CmdOpt
 import re
 
 logger = setup_logger(__name__)
 
 
-def parse() -> Request:
+def parse() -> CmdOpt:
     parser = argparse.ArgumentParser()
     parser.add_argument('-u', '--url', help='url', dest='target')
     parser.add_argument('--data', help='post data', dest='paramData')
@@ -43,9 +45,22 @@ def parse() -> Request:
     conf.log_file = args.log_file
     conf.globalVariables = args
 
+    cmd = CmdOpt()
     request = Request()
     initRequest(request)
-    return request
+    initCmdOpt(cmd, request)
+    if not conf.globalVariables.proxy:
+        conf.proxies = {}
+    conf.globalVariables = vars(conf.globalVariables)
+    return cmd
+
+
+def initCmdOpt(cmd: CmdOpt, req:Request):
+    args = conf.globalVariables
+    cmd.req = req
+    cmd.skip = args.skip
+    cmd.skipDOM = args.skipDOM
+    cmd.encoding = args.encode
 
 
 def initRequest(request: Request):

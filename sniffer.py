@@ -7,6 +7,6 @@ print("xss sniffer")
 # check env
 checker.check()
 # parse args
-args.parse()
-scan()
+cmd = args.parse()
+scan(cmd)
 

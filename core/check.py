@@ -2,18 +2,27 @@ import copy
 from fuzzywuzzy import fuzz
 import re
 from urllib.parse import unquote
-
+from model.opt import CmdOpt
 from core.conf import xsschecker
 from core.requester import requester
 from core.utils import replaceValue, fillHoles
 
 
-def checker(url, params, headers, GET, delay, payload, positions, timeout, encoding):
+def checker(cmd: CmdOpt, payload, positions):
+    req = cmd.req
+    url = req.url
+    params = req.params
+    headers = req.header
+    GET = req.method
+    delay = req.delay
+    timeout = req.timeout
+    encoding = cmd.encoding
     checkString = 'st4r7s' + payload + '3nd'
     if encoding:
         checkString = encoding(unquote(checkString))
-    response = requester(url, replaceValue(
-        params, xsschecker, checkString, copy.deepcopy), headers, GET, delay, timeout).text.lower()
+    reqCopy = cmd.req
+    reqCopy.params = replaceValue(params, xsschecker, checkString, copy.deepcopy)
+    response = requester(reqCopy).text.lower()
     reflectedPositions = []
     for match in re.finditer('st4r7s', response):
         reflectedPositions.append(match.start())
@@ -44,7 +53,17 @@ def checker(url, params, headers, GET, delay, payload, positions, timeout, encod
         num += 1
     return list(filter(None, efficiencies))
 
-def filterChecker(url, params, headers, GET, delay, occurences, timeout, encoding):
+
+def filterChecker(cmd: CmdOpt, occurences):
+    req = cmd.req
+    url = req.url
+    params = req.params
+    GET = req.method
+    timeout = req.timeout
+    delay = req.delay
+    encoding = cmd.encoding
+    headers = req.header
+
     positions = occurences.keys()
     sortedEfficiencies = {}
     # adding < > to environments anyway because they can be used in all contexts
@@ -68,8 +87,7 @@ def filterChecker(url, params, headers, GET, delay, occurences, timeout, encodin
                 environments.add(occurences[i]['details']['quote'])
     for environment in environments:
         if environment:
-            efficiencies = checker(
-                url, params, headers, GET, delay, environment, positions, timeout, encoding)
+            efficiencies = checker(cmd, environment, positions)
             efficiencies.extend([0] * (len(occurences) - len(efficiencies)))
             for occurence, efficiency in zip(occurences, efficiencies):
                 occurences[occurence]['score'][environment] = efficiency

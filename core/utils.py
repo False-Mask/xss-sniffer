@@ -240,6 +240,7 @@ def deJSON(data):
 def getVar(name):
     return core.conf.globalVariables[name]
 
+
 def updateVar(name, data, mode=None):
     if mode:
         if mode == 'append':
