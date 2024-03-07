@@ -26,7 +26,7 @@ def requester(request: Request):
     delay = request.delay
     header = request.header
     url = request.url
-    data = request.params if method else request.data
+    data = request.convertedParams
     timeout = request.timeout
 
     time.sleep(delay)

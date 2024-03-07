@@ -1,3 +1,6 @@
+import copy
+
+
 class Request:
     # False -> POST, True -> GET
     method: bool = False
@@ -14,7 +17,7 @@ class Request:
 
     def convertParams(self):
         if self.method:
-            self.convertedParams = self.params
+            self.convertedParams = copy.deepcopy(self.params)
         else:
-            self.convertedParams = self.data
+            self.convertedParams = copy.deepcopy(self.data)
 

@@ -11,7 +11,7 @@ from core.utils import replaceValue, fillHoles
 def checker(cmd: CmdOpt, payload, positions):
     req = cmd.req
     url = req.url
-    params = req.params
+    params = req.convertedParams
     headers = req.header
     GET = req.method
     delay = req.delay
@@ -21,7 +21,7 @@ def checker(cmd: CmdOpt, payload, positions):
     if encoding:
         checkString = encoding(unquote(checkString))
     reqCopy = copy.deepcopy(cmd.req)
-    reqCopy.params = replaceValue(params, xsschecker, checkString, copy.deepcopy)
+    reqCopy.convertedParams = replaceValue(params, xsschecker, checkString, copy.deepcopy)
     response = requester(reqCopy).text.lower()
     reflectedPositions = []
     for match in re.finditer('st4r7s', response):

@@ -99,9 +99,9 @@ def scan(cmd: CmdOpt):
         cmdCopy = copy.deepcopy(cmd)
         logger.info('Testing parameter: %s' % paramName)
         if encoding:
-            cmdCopy.req.params[paramName] = encoding(xsschecker)
+            cmdCopy.req.convertedParams[paramName] = encoding(xsschecker)
         else:
-            cmdCopy.req.params[paramName] = xsschecker
+            cmdCopy.req.convertedParams[paramName] = xsschecker
 
         response = requester(cmdCopy.req)
         occurences = htmlParser(response, encoding)

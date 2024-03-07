@@ -64,6 +64,11 @@ def initCmdOpt(cmd: CmdOpt, req: Request):
     cmd.skipDOM = args.skipDOM
     cmd.encoding = base64 if args.encode and args.encode == 'base64' else False
 
+    # logs
+    core.conf.console_log_level = args.console_log_level
+    core.conf.file_log_level = args.file_log_level
+    core.conf.log_file = args.log_file
+
 
 def initRequest(request: Request):
     args = conf.globalVariables

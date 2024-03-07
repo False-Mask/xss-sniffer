@@ -1,29 +1,4 @@
-import logging
-from .colors import *
-
-__all__ = ['setup_logger', 'console_log_level', 'file_log_level', 'log_file']
-
-console_log_level = 'INFO'
-file_log_level = None
-log_file = 'xsstrike.log'
-
-"""
-Default Logging Levels
-CRITICAL = 50
-ERROR = 40
-WARNING = 30
-INFO = 20
-DEBUG = 10
-"""
-
-VULN_LEVEL_NUM = 60
-RUN_LEVEL_NUM = 22
-GOOD_LEVEL_NUM = 25
-
-
-logging.addLevelName(VULN_LEVEL_NUM, 'VULN')
-logging.addLevelName(RUN_LEVEL_NUM, 'RUN')
-logging.addLevelName(GOOD_LEVEL_NUM, 'GOOD')
+from core.conf import *
 
 
 def _vuln(self, msg, *args, **kwargs):
