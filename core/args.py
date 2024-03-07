@@ -105,9 +105,6 @@ def initRequest(request: Request):
     request.delay = args.delay
 
 
-#     TODO data
-
-
 def strToDic(headers):
     headers = headers.replace('\\n', '\n')
     sorted_headers = {}
