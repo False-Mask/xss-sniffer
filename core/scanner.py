@@ -69,7 +69,7 @@ def scan(cmd: CmdOpt):
     method = req.method
     target = req.rawUrl
     url = req.url
-    params = req.params
+    params = req.convertedParams
     skipDOM = cmd.skipDOM
     encoding = cmd.encoding
     logger.debug('Scan target: {}'.format(target))

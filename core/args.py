@@ -49,6 +49,7 @@ def parse() -> CmdOpt:
     cmd = CmdOpt()
     request = Request()
     initRequest(request)
+    request.convertParams()
     initCmdOpt(cmd, request)
     if not conf.globalVariables.proxy:
         conf.proxies = {}
@@ -89,7 +90,15 @@ def initRequest(request: Request):
     request.url = split[0]  # url
     # pass argument for GOT and POST
     if not request.method:
-        request.data = args.paramData
+        data = args.paramData
+        parts = data.split('&')
+        dataParams = dict()
+        for part in parts:
+            kv = part.split('=')
+            if len(kv) < 2:
+                kv.append('')
+            dataParams[kv[0]] = kv[1]
+        request.data = dataParams
     else:
         params = dict()
         parts = split[1].split('&')
