@@ -56,7 +56,7 @@ def parse() -> CmdOpt:
     return cmd
 
 
-def initCmdOpt(cmd: CmdOpt, req:Request):
+def initCmdOpt(cmd: CmdOpt, req: Request):
     args = conf.globalVariables
     cmd.req = req
     cmd.skip = args.skip
@@ -87,18 +87,24 @@ def initRequest(request: Request):
 
     # url & params
     request.url = split[0]  # url
-    params = dict()
-    parts = split[1].split('&')
-    for part in parts:
-        kv = part.split('=')
-        if len(kv) < 2:
-            kv.append('')
-        params[kv[0]] = kv[1]
-    request.params = params
+    # pass argument for GOT and POST
+    if not request.method:
+        request.data = args.paramData
+    else:
+        params = dict()
+        parts = split[1].split('&')
+        for part in parts:
+            kv = part.split('=')
+            if len(kv) < 2:
+                kv.append('')
+            params[kv[0]] = kv[1]
+        request.params = params
     # timeout
     request.timeout = args.timeout
     # delay
     request.delay = args.delay
+
+
 #     TODO data
 
 
