@@ -1,7 +1,7 @@
 import argparse
 
 import core.conf
-from core import conf, log
+from core import conf
 from core.encoders import base64
 from core.log import setup_logger
 from model.net import Request
@@ -35,7 +35,7 @@ def parse() -> CmdOpt:
     parser.add_argument('--skip-dom', help='skip dom checking', dest='skipDOM', action='store_true')
     parser.add_argument('--blind', help='inject blind XSS payload while crawling', dest='blindXSS', action='store_true')
     parser.add_argument('--console-log-level', help='Console logging level', dest='console_log_level',
-                        default=log.console_log_level, choices=log.log_config.keys())
+                        default=conf.console_log_level, choices=conf.log_config.keys())
     parser.add_argument('--file-log-level', help='File logging level', dest='file_log_level',
                         choices=conf.log_config.keys(), default=None)
     parser.add_argument('--log-file', help='Name of the file to log', dest='log_file', default=conf.log_file)

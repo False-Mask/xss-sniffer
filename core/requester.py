@@ -1,11 +1,10 @@
 import random
 import requests
 import time
-from urllib3.exceptions import ProtocolError
 import warnings
 
 import core.conf
-from core.utils import converter, getVar
+from core.utils import getVar
 from core.log import setup_logger
 from model.net import Request
 
