@@ -26,7 +26,7 @@ def requester(request: Request):
     delay = request.delay
     header = request.header
     url = request.url
-    data = request.params if not method else request.data
+    data = request.params if method else request.data
     timeout = request.timeout
 
     time.sleep(delay)
@@ -48,7 +48,7 @@ def requester(request: Request):
     logger.debug_json('Requester headers:', header)
     # log end  ==>
 
-    if not method:
+    if method:
         response = requests.get(url, params=data, headers=header,
                                 timeout=timeout, verify=False, proxies=core.conf.proxies)
     elif getVar('jsonData'):

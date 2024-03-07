@@ -67,7 +67,7 @@ def initCmdOpt(cmd: CmdOpt, req:Request):
 def initRequest(request: Request):
     args = conf.globalVariables
     # make sure the http method type
-    request.method = True if args.paramData else False
+    request.method = False if args.paramData else True
     # parse header
     if type(args.add_headers) is bool:
         pass

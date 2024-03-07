@@ -20,7 +20,7 @@ def checker(cmd: CmdOpt, payload, positions):
     checkString = 'st4r7s' + payload + '3nd'
     if encoding:
         checkString = encoding(unquote(checkString))
-    reqCopy = cmd.req
+    reqCopy = copy.deepcopy(cmd.req)
     reqCopy.params = replaceValue(params, xsschecker, checkString, copy.deepcopy)
     response = requester(reqCopy).text.lower()
     reflectedPositions = []

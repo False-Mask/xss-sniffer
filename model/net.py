@@ -1,5 +1,5 @@
 class Request:
-    # False -> GET, True -> POST
+    # False -> POST, True -> GET
     method: bool = False
     header = dict()
     rawUrl: str = ""
