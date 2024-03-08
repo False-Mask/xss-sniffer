@@ -10,12 +10,7 @@ from core.utils import replaceValue, fillHoles
 
 def checker(cmd: CmdOpt, payload, positions):
     req = cmd.req
-    url = req.url
     params = req.convertedParams
-    headers = req.header
-    GET = req.method
-    delay = req.delay
-    timeout = req.timeout
     encoding = cmd.encoding
     checkString = 'st4r7s' + payload + '3nd'
     if encoding:
@@ -55,15 +50,6 @@ def checker(cmd: CmdOpt, payload, positions):
 
 
 def filterChecker(cmd: CmdOpt, occurences):
-    req = cmd.req
-    url = req.url
-    params = req.params
-    GET = req.method
-    timeout = req.timeout
-    delay = req.delay
-    encoding = cmd.encoding
-    headers = req.header
-
     positions = occurences.keys()
     sortedEfficiencies = {}
     # adding < > to environments anyway because they can be used in all contexts
