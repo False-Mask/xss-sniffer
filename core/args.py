@@ -9,6 +9,7 @@ from model.opt import CmdOpt
 import re
 
 logger = setup_logger(__name__)
+cmdOpt: CmdOpt
 
 
 def parse() -> CmdOpt:
@@ -75,6 +76,9 @@ def initCmdOpt(cmd: CmdOpt, req: Request):
     core.conf.console_log_level = args.console_log_level
     core.conf.file_log_level = args.file_log_level
     core.conf.log_file = args.log_file
+
+    global cmdOpt
+    cmdOpt = cmd
 
 
 def initRequest(request: Request):

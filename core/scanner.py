@@ -29,6 +29,7 @@ def scan(mode: Mode):
     pass
 
 
+# TODO
 def singleFuzz(target, paramData, encoding, headers, delay, timeout):
     GET, POST = (False, True) if paramData else (True, False)
     # If the user hasn't supplied the root url with http(s), we will handle it
@@ -73,7 +74,8 @@ def scan(cmd: CmdOpt):
     skipDOM = cmd.skipDOM
     encoding = cmd.encoding
     logger.debug('Scan target: {}'.format(target))
-    response = requester(req).text
+    responseRes = requester(req)
+    response = responseRes.content
     skip = cmd.skip
     # dom
     if not skipDOM:
@@ -103,8 +105,9 @@ def scan(cmd: CmdOpt):
         else:
             cmdCopy.req.convertedParams[paramName] = xsschecker
 
-        response = requester(cmdCopy.req)
-        occurences = htmlParser(response, encoding)
+        responseRes = requester(cmdCopy.req)
+        responseText = responseRes.content
+        occurences = htmlParser(responseText, encoding)
         positions = occurences.keys()
         logger.debug('Scan occurences: {}'.format(occurences))
         if not occurences:
@@ -117,7 +120,7 @@ def scan(cmd: CmdOpt):
         efficiencies = filterChecker(cmdCopy, occurences)
         logger.debug('Scan efficiencies: {}'.format(efficiencies))
         logger.run('Generating payloads')
-        vectors = generator(occurences, response.text)
+        vectors = generator(occurences, responseText)
         total = 0
         for v in vectors.values():
             total += len(v)

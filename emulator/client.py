@@ -1,7 +1,9 @@
 import time
 import urllib.parse
 from selenium import webdriver
-from model.net import Request
+from selenium.common import UnexpectedAlertPresentException
+from selenium.webdriver.support.wait import WebDriverWait
+from model.net import Request, RequestResult
 from model.opt import CmdOpt
 
 browser: webdriver.Chrome
@@ -29,7 +31,9 @@ def initClient(cmd: CmdOpt):
     )
 
 
-def request(req: Request):
+def request(req: Request, res: RequestResult) -> str:
+    wait = WebDriverWait(browser, 10)
+    # wait.until(expected_conditions.presence_of_element_located())
     url = req.url
     # add /
     if not url.endswith('/'):
@@ -37,7 +41,7 @@ def request(req: Request):
     if not url.endswith('?'):
         url += '?'
     # append kv
-    for (k, v) in req.params.items():
+    for (k, v) in req.convertedParams.items():
         url += k + "=" + v
     browser.get(req.url)
     parseResult = urllib.parse.urlparse(url)
@@ -56,8 +60,16 @@ def request(req: Request):
                     "domain": domain,
                 })
 
-    browser.get(url)
-    return browser.page_source
+    if browser.current_url != url:
+        browser.get(url)
+    try:
+        res.content = browser.page_source
+    except UnexpectedAlertPresentException as alertExp:
+        res.check = True
+        # res.content = browser.page_source
+    return res.content
+
+
 
 
 # test

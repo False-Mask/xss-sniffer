@@ -4,9 +4,8 @@ from core.conf import badTags, xsschecker
 from core.utils import isBadContext, equalize, escaped, extractScripts
 
 
-def htmlParser(response, encoding):
-    rawResponse = response  # raw response returned by requests
-    response = response.text  # response content
+def htmlParser(responseStr, encoding):
+    response = responseStr  # response content
     if encoding:  # if the user has specified an encoding, encode the probe in that
         response = response.replace(encoding(xsschecker), xsschecker)
     reflections = response.count(xsschecker)

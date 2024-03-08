@@ -6,14 +6,15 @@ import warnings
 import core.conf
 from core.utils import getVar
 from core.log import setup_logger
-from model.net import Request
+from model.net import Request, RequestResult
+from .args import cmdOpt
+from emulator import client
 
 logger = setup_logger(__name__)
-
 warnings.filterwarnings('ignore')  # Disable SSL related warnings
 
 
-def requester(request: Request):
+def requester(request: Request) -> RequestResult:
     # if getVar('jsonData'):
     #     data = converter(data)
     # elif getVar('path'):
@@ -47,13 +48,24 @@ def requester(request: Request):
     logger.debug_json('Requester headers:', header)
     # log end  ==>
 
-    if method:
-        response = requests.get(url, params=data, headers=header,
-                                timeout=timeout, verify=False, proxies=core.conf.proxies)
-    elif getVar('jsonData'):
-        response = requests.post(url, json=data, headers=header,
-                                 timeout=timeout, verify=False, proxies=core.conf.proxies)
+    res = RequestResult()
+    res.check = False
+    # 默认扫描模式
+    if not cmdOpt.useSele:
+        if method:
+            response = requests.get(url, params=data, headers=header,
+                                    timeout=timeout, verify=False, proxies=core.conf.proxies)
+        elif getVar('jsonData'):
+            response = requests.post(url, json=data, headers=header,
+                                     timeout=timeout, verify=False, proxies=core.conf.proxies)
+        else:
+            response = requests.post(url, data=data, headers=header,
+                                     timeout=timeout, verify=False, proxies=core.conf.proxies)
+        res.content = response
+
+    # 开启sele进行扫描
     else:
-        response = requests.post(url, data=data, headers=header,
-                                 timeout=timeout, verify=False, proxies=core.conf.proxies)
-    return response
+        client.initClient(cmdOpt)
+        client.request(request, res)
+    return res
+

@@ -21,3 +21,10 @@ class Request:
         else:
             self.convertedParams = copy.deepcopy(self.data)
 
+
+class RequestResult:
+
+    def __init__(self):
+        self.content = ""
+        self.check = False
+

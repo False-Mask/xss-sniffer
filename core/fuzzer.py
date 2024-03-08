@@ -12,6 +12,7 @@ from core.log import setup_logger
 logger = setup_logger(__name__)
 
 
+# TODO
 def fuzzer(url, params, headers, GET, delay, timeout, encoding):
     for fuzz in fuzzes:
         if delay == 0:
