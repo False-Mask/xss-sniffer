@@ -40,7 +40,7 @@ def requester(request: Request) -> RequestResult:
 
     # log start ==>
     logger.debug('Requester url: {}'.format(url))
-    if not method:
+    if method:
         logger.debug('Requester GET!')
     else:
         logger.debug('Requester POST!')
