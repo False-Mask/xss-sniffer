@@ -117,13 +117,14 @@ def initRequest(request: Request):
         request.data = dataParams
     else:
         params = dict()
-        parts = split[1].split('&')
-        for part in parts:
-            kv = part.split('=')
-            if len(kv) < 2:
-                kv.append('')
-            params[kv[0]] = kv[1]
-        request.params = params
+        if len(split) >= 2:
+            parts = split[1].split('&')
+            for part in parts:
+                kv = part.split('=')
+                if len(kv) < 2:
+                    kv.append('')
+                params[kv[0]] = kv[1]
+            request.params = params
     # timeout
     request.timeout = args.timeout
     # delay
