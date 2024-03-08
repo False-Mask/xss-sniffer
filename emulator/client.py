@@ -1,6 +1,5 @@
 import time
-
-import requests
+import urllib.parse
 from selenium import webdriver
 from model.net import Request
 from model.opt import CmdOpt
@@ -35,23 +34,29 @@ def request(req: Request):
     # add /
     if not url.endswith('/'):
         url += '/'
+    if not url.endswith('?'):
+        url += '?'
     # append kv
-    for h in req.header:
-        url += h[0] + "=" + h[1]
+    for (k, v) in req.params.items():
+        url += k + "=" + v
     browser.get(req.url)
-    for head in req.header:
-        if head[0] == "Cookie":
-            v = head[1]
+    parseResult = urllib.parse.urlparse(url)
+    domain = parseResult.netloc.split(':')[0]
+    for (headkey, headValue) in req.header.items():
+        if headkey == "Cookie":
+            v = headValue
             kvs = v.split(";")
             for kv in kvs:
-                keyValue = kv.split(":")
+                keyValue = kv.split("=")
+                if len(keyValue) < 2:
+                    break
                 browser.add_cookie({
-                    "name": keyValue[0],
-                    "value": keyValue[1],
-                    "domain": "localhost",
+                    "name": keyValue[0].strip(),
+                    "value": keyValue[1].strip(),
+                    "domain": domain,
                 })
 
-    browser.get("http://localhost:4280/vulnerabilities/xss_d/")
+    browser.get(url)
     return browser.page_source
 
 
@@ -61,5 +66,5 @@ if __name__ == '__main__':
 
     cmd = parse()
     initClient(cmd)
-    request(cmd.req)
+    print(request(cmd.req))
     time.sleep(100000)
