@@ -6,3 +6,6 @@ class CmdOpt:
     encoding: str
     skipDOM: bool
     skip: bool
+    # sele
+    useSele: bool
+    enableUI: bool

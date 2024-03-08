@@ -39,6 +39,11 @@ def parse() -> CmdOpt:
     parser.add_argument('--file-log-level', help='File logging level', dest='file_log_level',
                         choices=conf.log_config.keys(), default=None)
     parser.add_argument('--log-file', help='Name of the file to log', dest='log_file', default=conf.log_file)
+
+    # web
+    parser.add_argument("--use-selenium", help='Use selenium ensure XSS is absolute exist', dest="use_sele", action='store_true')
+    parser.add_argument("--enable-web-ui", help="enable the selenium ui", dest="enable_ui", action="store_true")
+
     args = parser.parse_args()
 
     conf.console_log_level = args.console_log_level
@@ -63,7 +68,9 @@ def initCmdOpt(cmd: CmdOpt, req: Request):
     cmd.skip = args.skip
     cmd.skipDOM = args.skipDOM
     cmd.encoding = base64 if args.encode and args.encode == 'base64' else False
-
+    # sele
+    cmd.useSele = args.use_sele
+    cmd.enableUI = args.enable_ui
     # logs
     core.conf.console_log_level = args.console_log_level
     core.conf.file_log_level = args.file_log_level

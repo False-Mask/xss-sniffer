@@ -44,14 +44,14 @@ def generator(occurences, response):
                 for filling in fillings:
                     for function in functions:
                         vector = quote + filling + r('autofocus') + \
-                            filling + r('onfocus') + '=' + quote + function
+                                 filling + r('onfocus') + '=' + quote + function
                         found = True
                         vectors[8].add(vector)
             if quoteEfficiency == 90:
                 for filling in fillings:
                     for function in functions:
                         vector = '\\' + quote + filling + r('autofocus') + filling + \
-                            r('onfocus') + '=' + function + filling + '\\' + quote
+                                 r('onfocus') + '=' + function + filling + '\\' + quote
                         found = True
                         vectors[7].add(vector)
             if Type == 'value':
