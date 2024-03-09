@@ -326,12 +326,12 @@ def generate(ctx: ContextType, pos: int, response: str):
     for v in vector:
         print(v)
 
+
 def find_my_case(tag: Tag):
     for (_, value) in tag.attrs.items():
         if re.compile(xsschecker).match(value):
             return True
     return False
-
 
 
 def getLocationInfo(ctx: ContextType, pos: int, res: str, checker: str):
