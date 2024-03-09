@@ -2,7 +2,7 @@ import re
 from enum import Enum
 
 import attr
-from bs4 import BeautifulSoup, Tag
+from bs4 import BeautifulSoup, Tag, ResultSet, Comment
 
 
 def generator(occurences, response):
@@ -182,11 +182,20 @@ class ContextType(Enum):
     COMMENT = 4
     JAVASCRIPT = 5
     CSS = 6
+    NONE = 7
 
 
 class Context:
     type: ContextType
     endTag: str
+
+
+class LocationInfo:
+
+    def __init__(self, t: ContextType, tags: ResultSet):
+        self.t = t
+        self.tags = tags
+
 
 
 #  [*] Scan occurences: {2834: {'position': 2834, 'context': 'html', 'details': {}}}
@@ -334,19 +343,48 @@ def find_my_case(tag: Tag):
     return False
 
 
-def getLocationInfo(ctx: ContextType, pos: int, res: str, checker: str):
-    bs: BeautifulSoup = BeautifulSoup(res, "html.parser")
-    # attrs
-    # elements = bs.find_all(string=re.compile("v3dm0s"))
-    # for element in elements:
-    #     print(element)
-    # elements = bs.find_all(attrs={re.compile(".+"): re.compile("v3dm0s")})
-    # for element in elements:
-    #     print(element)
-    elements = bs.find_all(find_my_case)
-    for element in elements:
-        print(element)
-    pass
+def getLocationInfo(responseText: str, checker: str) -> list[LocationInfo]:
+    bs: BeautifulSoup = BeautifulSoup(responseText, "html.parser")
+    regex = re.compile(checker)
+    # result
+    res: list[LocationInfo] = []
+    elementType: ContextType
+    tags: ResultSet
+    # find in string
+    stringElements = bs.find_all(string=regex)
+    if stringElements:
+        elementType = ContextType.HTML
+        tags = stringElements
+        res.append(LocationInfo(elementType, tags))
+    # find in attrs
+    attrElements = bs.find_all(find_my_case)
+    if attrElements:
+        elementType = ContextType.ATTRIBUTE
+        tags = attrElements
+        res.append(LocationInfo(elementType, tags))
+    # find in javascript
+    script = bs.script
+    if script:
+        jsElements = script.find_all(string=regex)
+        if jsElements:
+            elementType = ContextType.JAVASCRIPT
+            tags = jsElements
+            res.append(LocationInfo(elementType, tags))
+    # find in comment
+    commentElements = bs.find_all(lambda text: isinstance(text, Comment))
+    if commentElements:
+        elementType = ContextType.COMMENT
+        tags = commentElements
+        res.append(LocationInfo(elementType, tags))
+    # find in css
+    style = bs.style
+    if style:
+        cssElements = style.find_all(string=regex)
+        if cssElements:
+            elementType = ContextType.CSS
+            tags = cssElements
+            res.append(LocationInfo(elementType, tags))
+    return res
 
 
 # just for test
@@ -362,7 +400,9 @@ if __name__ == '__main__':
             element = occ[i]
             context: str = element['context']
             pos: int = element['position']
-            getLocationInfo(strMapToEle(context), pos,test2Str , xsschecker)
+            infos = getLocationInfo(test2Str, xsschecker)
+            for info in infos:
+                print(info.t, info.tags)
 
     testLoc()
 

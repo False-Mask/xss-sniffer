@@ -116,7 +116,22 @@ occ[2794] = {
 xsschecker = 'v3dm0s'
 
 test2Str=""" <html>
-    <test src="v3dm0s"></test>>
-    <ac a="v3dm0s"></ac>>
-    <r 2="v3dm0s"></r>>
-    </html>>"""
+    <test src="v3dm0sa "></test>>
+    <ac a="v3dm0sad "></ac>>
+    <r 2="v3dm0s as"></r>>
+    <tester>v3dm0sa <tester/>
+    
+    <script>
+    asf
+        v3dm0saawfjaf
+    </script>
+    
+    <style>
+    12 v3dm0s12
+    
+    </style>
+    
+    </html>
+    
+    
+    """
