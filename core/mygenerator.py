@@ -1,3 +1,4 @@
+import base64
 import re
 from enum import Enum
 from bs4 import BeautifulSoup, Tag, ResultSet, Comment
@@ -210,10 +211,10 @@ def strMapToEle(context: str) -> ContextType:
     pass
 
 
-def generator(infos: list[LocationInfo]):
+def generator(infos: list[LocationInfo], responseText: str):
     for info in infos:
         locationInfo = info
-        generate(info)
+        generate(info, responseText)
     pass
 
 
@@ -313,22 +314,39 @@ def htmlType() -> list[str]:
     return vector
 
 
-def attrType(info: LocationInfo) -> list[str]:
+def attrType(info: LocationInfo, responseText: str) -> list[str]:
     res: list[str] = []
     tags = info.tags
+
+    # <a href="javascript:alert">
+    addForSpecial: bool = False
     for attrTag in tags:
-        print(attrTag)
+        if attrTag.name == 'a' and re.compile(xsschecker).match(attrTag.attrs['href']):
+            addForSpecial = True
+        elif attrTag.name in ['iframe', 'img'] and re.compile(xsschecker).match(attrTag.attrs['src']):
+            addForSpecial = True
+
+    # 添加特殊的payload
+    if addForSpecial:
+        for m in malicious:
+            res.append("javascript:" + m)
+    # 闭合
+    raw = htmlType()
+    spacer = ['"', "'"]
+    for space in spacer:
+        for e in raw:
+            res.append(space + ">" + e + "//")
 
     return res
 
 
-def generate(location: LocationInfo):
+def generate(location: LocationInfo, responseText: str):
     ctx = location.t
     vector: list[str] = []
     if ctx == ContextType.HTML:
         vector.extend(htmlType())
     elif ctx == ContextType.ATTRIBUTE:
-        vector.extend(attrType(location))
+        vector.extend(attrType(location, responseText))
         pass
     elif ctx == ContextType.COMMENT:
         pass
@@ -390,4 +408,3 @@ def getLocationInfo(responseText: str, checker: str) -> list[LocationInfo]:
             tags = cssElements
             res.append(LocationInfo(elementType, tags))
     return res
-

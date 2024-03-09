@@ -41,16 +41,16 @@ attr1 = """
     <title>Title</title>
 </head>
 <body>
-<a href="v3dm0s"></a>
+<a href='v3dm0s'></a>
 </body>
 </html>
 """
 
 if __name__ == '__main__':
     def testGene():
-        l = [attr1]
+        l = [test2Str, attr1]
         for e in l:
-            generator(getLocationInfo(e, xsschecker))
+            generator(getLocationInfo(e, xsschecker), e)
 
 
     def testLoc():
