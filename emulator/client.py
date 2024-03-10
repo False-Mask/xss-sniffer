@@ -3,10 +3,14 @@ import time
 import urllib.parse
 from typing import Dict, Any, Type
 
+import requests
 from selenium import webdriver
 from selenium.common import UnexpectedAlertPresentException, WebDriverException, NoAlertPresentException
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.remote.errorhandler import ErrorHandler, ErrorCode, ExceptionMapping
+
+import core
+from core.conf import timeout
 from model.net import Request, RequestResult
 from model.opt import CmdOpt
 
@@ -139,17 +143,24 @@ def initClient(cmd: CmdOpt):
     wait = WebDriverWait(browser, 10)
 
 
-def request(req: Request, res: RequestResult) -> str:
-    # wait.until(expected_conditions.presence_of_element_located())
+def buildUrl(req: Request) -> str:
     url = req.url
-    # add /
-    if not url.endswith('/'):
-        url += '/'
-    if len(req.convertedParams) > 0 and not url.endswith('?'):
-        url += '?'
-    # append kv
-    for (k, v) in req.convertedParams.items():
-        url += k + "=" + v
+    # Get
+    if req.method:
+        # add /
+        if not url.endswith('/'):
+            url += '/'
+        if len(req.convertedParams) > 0 and not url.endswith('?'):
+            url += '?'
+        # append kv
+        for (k, v) in req.convertedParams.items():
+            url += k + "=" + v
+    else:  # Post
+        pass  # Do nothing
+    return url
+
+
+def addCookie(req: Request, url: str):
     browser.get(req.url)
     parseResult = urllib.parse.urlparse(url)
     domain = parseResult.netloc.split(':')[0]
@@ -161,30 +172,65 @@ def request(req: Request, res: RequestResult) -> str:
                 keyValue = kv.split("=")
                 if len(keyValue) < 2:
                     break
-                try:
-                    browser.add_cookie({
-                        "name": keyValue[0].strip(),
-                        "value": keyValue[1].strip(),
-                        "domain": domain,
-                    })
-                except UnexpectedAlertPresentException as exp:
-                    res.check = True
-                    return res.content
+                browser.add_cookie({
+                    "name": keyValue[0].strip(),
+                    "value": keyValue[1].strip(),
+                    "domain": domain,
+                })
 
+
+def paramsToString(params: dict[str, str]):
+    data: str = ""
+    i = 0
+    for (k, v) in params.items():
+        data += k + '=' + v
+        i += 1
+        if i != len(params):
+            data += "&"
+    return data
+
+
+def execJsPostMethod(req: Request):
+    prams = req.convertedParams
+    data = paramsToString(prams)
+    code = """
+    const xhr = new XMLHttpRequest();
+    const url={url};
+    xhr.open("POST", url, false);
+    xhr.send({data});
+    """.format(url='"' + urllib.parse.urlparse(req.url).path + '"', data='"' + data + '"') + """
+      xhr.onreadystatechange = function() {
+        if (xhr.status === 200) {
+            console.log(xhr.responseText);
+        } else {
+            console.log(xhr.status, xhr.responseText);
+        }
+    };"""
+    v = browser.execute_script(code)
+    pass
+
+
+def request(req: Request, res: RequestResult) -> str:
+    # wait.until(expected_conditions.presence_of_element_located())
+    # 拼接构造Url
+    url = buildUrl(req)
+    # append Cookie
+    addCookie(req, url)
+
+    # open
     if browser.current_url != url:
         browser.get(url)
-    try:
-        # wait.until(EC.alert_is_present())
-        # browser.switch_to.alert.accept()
-        res.content = browser.page_source
-        res.check = browser.execute_script("return hacked")
-    # except UnexpectedAlertPresentException as alertExp:
-    #     res.check = True
-    #     res.content = browser.page_source
-    # except NoAlertPresentException as noAlert:
-    #     pass
-    #     res.content = browser.page_source
-    except Exception as exp:
-        print("Raise")
-        raise exp
+
+    # if this is post we need to post and refresh
+    if not req.method:
+        v = requests.post(url, data=req.convertedParams, headers=req.header,
+                      timeout=timeout, verify=False, proxies=core.conf.proxies)
+        browser.refresh()
+
+    # put value
+    res.content = browser.page_source
+    res.check = browser.execute_script("return hacked")
     return res.content
+
+
+
