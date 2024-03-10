@@ -4,9 +4,8 @@ import urllib.parse
 from typing import Dict, Any, Type
 
 from selenium import webdriver
-from selenium.common import UnexpectedAlertPresentException, WebDriverException
+from selenium.common import UnexpectedAlertPresentException, WebDriverException, NoAlertPresentException
 from selenium.webdriver.support.wait import WebDriverWait
-import selenium.webdriver.support.expected_conditions as EC
 from selenium.webdriver.remote.errorhandler import ErrorHandler, ErrorCode, ExceptionMapping
 from model.net import Request, RequestResult
 from model.opt import CmdOpt
@@ -112,19 +111,30 @@ def initClient(cmd: CmdOpt):
 
     # init option
     options = webdriver.ChromeOptions()
+    # prefs = {'profile.default_content_setting_values': {'notifications': 2}}
+    # options.set_capability("prefs", prefs)
+    # options.set_capability("unhandledPromptBehavior", "ignore")
     if not cmd.enableUI:
         options.add_argument("--headless")
-
     # init browser
     global browser
     browser = webdriver.Chrome(
         options=options,
         keep_alive=True
     )
-
-    # config
-    # browser.implicitly_wait(5)
-    # browser.error_handler =
+    # exec cpd cmd
+    code = """
+    hacked = false
+    
+    window.alert = function(message) {
+    hacked = true
+    };
+    
+    window.confirm = function (message) {
+    hacked = true
+    }"""
+    browser.execute_cdp_cmd('Page.addScriptToEvaluateOnNewDocument', {"source": code})
+    # browser.error_handler = ClientErrorHandler()
     global wait
     wait = WebDriverWait(browser, 10)
 
@@ -164,32 +174,17 @@ def request(req: Request, res: RequestResult) -> str:
     if browser.current_url != url:
         browser.get(url)
     try:
-        res.content = browser.page_source
-    except UnexpectedAlertPresentException as alertExp:
         # wait.until(EC.alert_is_present())
         # browser.switch_to.alert.accept()
-        res.check = True
         res.content = browser.page_source
+        res.check = browser.execute_script("return hacked")
+    # except UnexpectedAlertPresentException as alertExp:
+    #     res.check = True
+    #     res.content = browser.page_source
+    # except NoAlertPresentException as noAlert:
+    #     pass
+    #     res.content = browser.page_source
     except Exception as exp:
         print("Raise")
         raise exp
     return res.content
-
-
-
-
-# test
-if __name__ == '__main__':
-    from core.args import parse
-
-
-
-    cmd = parse()
-    initClient(cmd)
-    rr = RequestResult()
-    print(request(cmd.req, rr))
-
-    time.sleep(10)
-    rr = RequestResult()
-    print(request(cmd.req, rr))
-    time.sleep(100000000000)
