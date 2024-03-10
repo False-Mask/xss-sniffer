@@ -21,6 +21,22 @@ class Request:
         else:
             self.convertedParams = copy.deepcopy(self.data)
 
+    def parseUrl(self):
+        if self.rawUrl.find('?') > 0:
+            split = self.rawUrl.split('?')
+            self.url = split[0]
+            if len(split) == 2:
+                params = split[1].split('&')
+                for param in params:
+                    kv = param.split('=')
+                    if len(kv) < 2:
+                        kv.append('')
+                    self.params[kv[0]] = kv[1]
+        else:
+            self.url = self.rawUrl
+
+
+
 
 class RequestResult:
 

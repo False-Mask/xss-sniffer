@@ -1,10 +1,17 @@
 import copy
+import urllib.parse
+from queue import Queue
 from urllib.parse import urlparse, unquote
 
+from bs4 import BeautifulSoup, Tag, ResultSet
+import requests
+from requests import Response
+
+import core
 from core import conf
 from core.check import filterChecker, checker
 from core.colors import *
-from core.conf import xsschecker, minEfficiency
+from core.conf import xsschecker, minEfficiency, timeout
 from core.fuzzer import fuzzer
 from core.generator import generator
 from core.htmlParser import htmlParser
@@ -12,9 +19,13 @@ from core.requester import requester
 from core.utils import getUrl, getParams
 from core.log import setup_logger
 from enum import Enum
+
+from model.net import Request
 from model.opt import CmdOpt
 from . import mygenerator
 import re
+
+from .args import cmdOpt
 
 logger = setup_logger(__name__)
 
@@ -64,6 +75,78 @@ def singleFuzz(target, paramData, encoding, headers, delay, timeout):
         paramsCopy[paramName] = xsschecker
         fuzzer(url, paramsCopy, headers, GET,
                delay, timeout, encoding)
+
+
+def buildRequest(responseText: str) -> Request:
+    pass
+
+
+def parseUrl(req: Request) -> urllib.parse.ParseResult:
+    return urllib.parse.urlparse(req.rawUrl)
+
+
+def findUrl(tag: Tag) -> bool:
+    if "href" in tag.attrs.keys():
+        link = tag.attrs['href']
+        if link.startswith("http"):
+            return True
+        elif link.startswith('.'):
+            return True
+    return False
+
+
+def close(url):
+    if url[len(url) - 1] != '/':
+        return url + '/'
+    return url
+
+
+def getChildNodes(responseText: str, request: Request) -> list[Request]:
+    bs = BeautifulSoup(responseText, "html.parser")
+    childTags: ResultSet = bs.find_all(findUrl)
+    res: list[Request] = []
+    for i in childTags:
+        if i.attrs['href'].startswith('http'):
+            newReq = copy.deepcopy(request)
+            newReq.rawUrl = i.attrs['href']
+            newReq.parseUrl()
+            res.append(newReq)
+        elif i.attrs['href'].startswith('.'):
+            newReq = copy.deepcopy(request)
+            newReq.rawUrl = request.url[:request.url.rfind('/') + 1] + i.attrs['href']
+            newReq.parseUrl()
+            res.append(newReq)
+    return res
+
+
+def get(curReq: Request) -> Response:
+    return requests.get(curReq.rawUrl, params=curReq.convertedParams, headers=curReq.header, timeout=timeout,
+                        verify=False, proxies=core.conf.proxies)
+
+
+# 广度优化遍历
+def traversal(request: Request):
+    visited = set()
+    q = Queue()
+    q.put(request)
+    while q.not_empty:
+        curReq: Request = q.get()
+        # 防止重复遍历
+        item = parseUrl(curReq).path
+        if item in set:
+            continue
+        # 遍历当前节点(扫描漏洞)
+        visited.add(item)
+        # 先进行一次简单的请求，查看注入点 & 进行link的search
+        curNormalResponse = get(curReq)
+        request: Request = buildRequest(curNormalResponse.text)
+        cmd = copy.deepcopy(cmdOpt)
+        cmd.req = request
+        scan(cmd)
+        # 添加子节点
+        children: list[Request] = getChildNodes(curNormalResponse.text, request)
+        for child in children:
+            q.put(child)
 
 
 def scan(cmd: CmdOpt):
