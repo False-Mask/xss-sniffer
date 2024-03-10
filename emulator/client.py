@@ -129,7 +129,6 @@ def initClient(cmd: CmdOpt):
     wait = WebDriverWait(browser, 10)
 
 
-
 def request(req: Request, res: RequestResult) -> str:
     # wait.until(expected_conditions.presence_of_element_located())
     url = req.url

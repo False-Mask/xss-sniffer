@@ -210,11 +210,11 @@ def strMapToEle(context: str) -> ContextType:
     pass
 
 
-def generator(infos: list[LocationInfo], responseText: str):
+def generator(infos: list[LocationInfo], responseText: str) -> list[str]:
+    res: list[str] = []
     for info in infos:
-        locationInfo = info
-        generate(info, responseText)
-    pass
+        res.extend(generate(info, responseText))
+    return res
 
 
 # rawTag
@@ -238,6 +238,10 @@ base64Tag = ['embed', 'object', 'iframe']
 tag = ['a', 'img', 'html', 'script']
 
 malicious = ["alert(/1/)"]
+
+
+def generate(text: str) -> list[str]:
+    return generateAllCaseInternal(getLocationInfo(text, xsschecker), text)
 
 
 def htmlType() -> list[str]:
@@ -339,7 +343,14 @@ def attrType(info: LocationInfo, responseText: str) -> list[str]:
     return res
 
 
-def generate(location: LocationInfo, responseText: str):
+def generateAllCaseInternal(locations: list[LocationInfo], responseText: str) -> list[str]:
+    vector: list[str] = []
+    for location in locations:
+        vector.extend(generateSingleCaseInternal(location, responseText))
+    return vector
+
+
+def generateSingleCaseInternal(location: LocationInfo, responseText: str) -> list[str]:
     ctx = location.t
     vector: list[str] = []
     if ctx == ContextType.HTML:
@@ -353,15 +364,20 @@ def generate(location: LocationInfo, responseText: str):
         pass
     elif ctx == ContextType.CSS:
         pass
-
-    for v in vector:
-        print(v)
+    return vector
 
 
 def find_my_case(tag: Tag):
     for (_, value) in tag.attrs.items():
-        if re.compile(xsschecker).match(value):
-            return True
+        if isinstance(value, list):
+            for e in value:
+                if re.compile(xsschecker).match(e):
+                    return True
+        elif isinstance(value, str):
+            if re.compile(xsschecker).match(value):
+                return True
+        else:
+            raise Exception("Type unknown")
     return False
 
 

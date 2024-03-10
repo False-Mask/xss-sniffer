@@ -13,6 +13,7 @@ from core.utils import getUrl, getParams
 from core.log import setup_logger
 from enum import Enum
 from model.opt import CmdOpt
+from . import mygenerator
 import re
 
 logger = setup_logger(__name__)
@@ -25,8 +26,8 @@ class Mode(Enum):
     SCRAWL = 4
 
 
-def scan(mode: Mode):
-    pass
+# def scan(mode: Mode):
+#     pass
 
 
 # TODO
@@ -120,44 +121,40 @@ def scan(cmd: CmdOpt):
         efficiencies = filterChecker(cmdCopy, occurences)
         logger.debug('Scan efficiencies: {}'.format(efficiencies))
         logger.run('Generating payloads')
-        vectors = generator(occurences, responseText)
-        total = 0
-        for v in vectors.values():
-            total += len(v)
+        # vectors = generator(occurences, responseText)
+        vectors = mygenerator.generate(responseText)
+        total = len(vectors)
         if total == 0:
             logger.error('No vectors were crafted.')
             continue
         logger.info('Payloads generated: %i' % total)
         progress = 0
-        for confidence, vects in vectors.items():
-            for vect in vects:
-                if conf.globalVariables['path']:
-                    vect = vect.replace('/', '%2F')
-                loggerVector = vect
-                progress += 1
-                logger.run('Progress: %i/%i\r' % (progress, total))
-                if not method:
-                    vect = unquote(vect)
-                efficiencies = checker(cmdCopy, vect, positions)
-                if not efficiencies:
-                    for i in range(len(occurences)):
-                        efficiencies.append(0)
-                bestEfficiency = max(efficiencies)
-                if bestEfficiency == 100 or (vect[0] == '\\' and bestEfficiency >= 95):
-                    logger.red_line()
-                    logger.good('Payload: %s' % loggerVector)
-                    logger.info('Efficiency: %i' % bestEfficiency)
-                    logger.info('Confidence: %i' % confidence)
-                    if not skip:
-                        choice = input(
-                            '%s Would you like to continue scanning? [y/N] ' % que).lower()
-                        if choice != 'y':
-                            quit()
-                elif bestEfficiency > minEfficiency:
-                    logger.red_line()
-                    logger.good('Payload: %s' % loggerVector)
-                    logger.info('Efficiency: %i' % bestEfficiency)
-                    logger.info('Confidence: %i' % confidence)
+        for vect in vectors:
+            if conf.globalVariables['path']:
+                vect = vect.replace('/', '%2F')
+            loggerVector = vect
+            progress += 1
+            logger.run('Progress: %i/%i\r' % (progress, total))
+            if not method:
+                vect = unquote(vect)
+            efficiencies = checker(cmdCopy, vect, positions)
+            if not efficiencies:
+                for i in range(len(occurences)):
+                    efficiencies.append(0)
+            bestEfficiency = max(efficiencies)
+            if bestEfficiency == 100 or (vect[0] == '\\' and bestEfficiency >= 95):
+                logger.red_line()
+                logger.good('Payload: %s' % loggerVector)
+                logger.info('Efficiency: %i' % bestEfficiency)
+                if not skip:
+                    choice = input(
+                        '%s Would you like to continue scanning? [y/N] ' % que).lower()
+                    if choice != 'y':
+                        quit()
+            elif bestEfficiency > minEfficiency:
+                logger.red_line()
+                logger.good('Payload: %s' % loggerVector)
+                logger.info('Efficiency: %i' % bestEfficiency)
         logger.no_format('')
 
 
