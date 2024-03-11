@@ -1,8 +1,6 @@
 import copy
-import urllib.parse
 from queue import Queue
-from urllib.parse import urlparse, unquote
-
+from urllib.parse import urlparse, unquote, urlunparse, ParseResult, urljoin
 from bs4 import BeautifulSoup, Tag, ResultSet
 import requests
 from requests import Response
@@ -81,8 +79,8 @@ def buildRequest(responseText: str) -> Request:
     pass
 
 
-def parseUrl(req: Request) -> urllib.parse.ParseResult:
-    return urllib.parse.urlparse(req.rawUrl)
+def parseUrl(req: Request) -> ParseResult:
+    return urlparse(req.rawUrl)
 
 
 def findUrl(tag: Tag) -> bool:
@@ -111,7 +109,7 @@ def getChildNodes(responseText: str, request: Request) -> list[Request]:
             res.append(newReq)
         else:
             newReq = copy.deepcopy(request)
-            newReq.rawUrl = request.url[:request.url.rfind('/') + 1] + i.attrs['href']
+            newReq.rawUrl = urljoin(request.url, i.attrs['href'])
             newReq.parseUrl()
             res.append(newReq)
     return res
