@@ -122,7 +122,8 @@ def get(curReq: Request) -> Response:
                         verify=False, proxies=core.conf.proxies)
 
 
-# 广度优化遍历
+# 过滤不必要的请求
+# login关键字过滤 && 只爬取当前host的内容
 def requestFilter(primary: Request, curReq: Request) -> bool:
     if len(re.findall("{host}".format(host=parseUrl(primary).netloc), curReq.rawUrl)) != 0 and len(
             re.findall("logout", curReq.rawUrl)) == 0:
@@ -139,6 +140,7 @@ def scanXssForCurNode(curNormalResponse: Response):
     pass
 
 
+# 广度优先遍历
 def traversal(request: Request):
     visited = set()
     q = Queue()
