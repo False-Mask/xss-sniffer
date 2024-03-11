@@ -231,7 +231,7 @@ def scan(cmd: CmdOpt):
 
     if not params:
         logger.error('No parameters to test.')
-        quit()
+        return
     for paramName in params.keys():
         cmdCopy = copy.deepcopy(cmd)
         logger.info('Testing parameter: %s' % paramName)
@@ -284,7 +284,7 @@ def scan(cmd: CmdOpt):
                     choice = input(
                         '%s Would you like to continue scanning? [y/N] ' % que).lower()
                     if choice != 'y':
-                        quit()
+                        return
             elif bestEfficiency > minEfficiency:
                 logger.red_line()
                 logger.good('Payload: %s' % loggerVector)
