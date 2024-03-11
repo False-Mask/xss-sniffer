@@ -75,8 +75,46 @@ def singleFuzz(target, paramData, encoding, headers, delay, timeout):
                delay, timeout, encoding)
 
 
-def buildRequest(responseText: str) -> Request:
-    pass
+def findAllInputs(tag: Tag):
+    if tag.name == 'input':
+        return 'type' in tag.attrs and tag.attrs['type'] == 'text'
+    elif tag.name in ['textarea', 'select']:
+        return True
+    else:
+        return False
+
+
+# 对给定的url解析出参数类型。
+def buildRequest(req: Request, responseText: str) -> Request:
+    bs = BeautifulSoup(responseText, "html.parser")
+    forms = bs.find_all(name="form")
+    req = copy.deepcopy(req)
+    for form in forms:
+        attr: dict[str, str] = form.attrs
+        if 'method' in attr.keys():
+            # Method
+            method = attr['method']
+            req.method = method.lower() == 'get'
+            # Url
+            if 'action' not in attr.keys() or attr['action'] in ['#', '']:
+                pass
+            else:
+                req.rawUrl = urljoin(req.rawUrl, attr['action'])
+            req.parseUrl()
+            # params
+            params: dict[str, str] = dict()
+            for tag in form.find_all(findAllInputs):
+                attr: dict[str, str] = tag.attrs
+                if 'name' in attr.keys():
+                    params[attr['name']] = ''
+            if req.method:
+                req.params = params
+            else:
+                req.data = params
+            req.convertParams()
+        else:
+            return Request()
+    return req
 
 
 def parseUrl(req: Request) -> ParseResult:
@@ -130,11 +168,11 @@ def requestFilter(primary: Request, curReq: Request) -> bool:
         return False
 
 
-def scanXssForCurNode(curNormalResponse: Response):
-    # request: Request = buildRequest(curNormalResponse.text)
-    # cmd = copy.deepcopy(cmdOpt)
-    # cmd.req = request
-    # scan(cmd)
+def scanXssForCurNode(req, curNormalResponse: Response):
+    request: Request = buildRequest(req, curNormalResponse.text)
+    cmd = copy.deepcopy(cmdOpt)
+    cmd.req = request
+    scan(cmd)
     pass
 
 
@@ -155,7 +193,7 @@ def traversal(request: Request):
         # 先进行一次简单的请求，查看注入点 & 进行link的search
         curNormalResponse = get(curReq)
         # 为当前节点扫描XSS
-        scanXssForCurNode(curNormalResponse)
+        scanXssForCurNode(curReq, curNormalResponse)
         # 添加子节点
         children: list[Request] = getChildNodes(curNormalResponse.text, request)
         for child in children:

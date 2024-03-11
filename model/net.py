@@ -2,18 +2,18 @@ import copy
 
 
 class Request:
-    # False -> POST, True -> GET
-    method: bool = False
-    header = dict()
-    rawUrl: str = ""
-    url: str = ""
-    params: dict = dict()  # get params
-    delay: int = 0
-    data: dict = dict()  # post params
-    timeout: int = 0
-
-    # 转换后的参数
-    convertedParams: dict
+    def __init__(self):
+        # False -> POST, True -> GET
+        self.method: bool = False
+        self.header = dict()
+        self.rawUrl: str = ""
+        self.url: str = ""
+        self.params: dict = dict()  # get params
+        self.delay: int = 0
+        self.data: dict = dict()  # post params
+        self.timeout: int = 0
+        # 转换后的参数
+        self.convertedParams: dict = dict()
 
     def convertParams(self):
         if self.method:
@@ -36,11 +36,8 @@ class Request:
             self.url = self.rawUrl
 
 
-
-
 class RequestResult:
 
     def __init__(self):
         self.content = ""
         self.check = False
-
