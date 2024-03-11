@@ -88,9 +88,7 @@ def parseUrl(req: Request) -> urllib.parse.ParseResult:
 def findUrl(tag: Tag) -> bool:
     if "href" in tag.attrs.keys():
         link = tag.attrs['href']
-        if link.startswith("http"):
-            return True
-        elif link.startswith('.'):
+        if not link.startswith('#'):
             return True
     return False
 
@@ -111,7 +109,7 @@ def getChildNodes(responseText: str, request: Request) -> list[Request]:
             newReq.rawUrl = i.attrs['href']
             newReq.parseUrl()
             res.append(newReq)
-        elif i.attrs['href'].startswith('.'):
+        else:
             newReq = copy.deepcopy(request)
             newReq.rawUrl = request.url[:request.url.rfind('/') + 1] + i.attrs['href']
             newReq.parseUrl()
@@ -125,24 +123,39 @@ def get(curReq: Request) -> Response:
 
 
 # 广度优化遍历
+def requestFilter(primary: Request, curReq: Request) -> bool:
+    if len(re.findall("{host}".format(host=parseUrl(primary).netloc), curReq.rawUrl)) != 0 and len(
+            re.findall("logout", curReq.rawUrl)) == 0:
+        return True
+    else:
+        return False
+
+
+def scanXssForCurNode(curNormalResponse: Response):
+    # request: Request = buildRequest(curNormalResponse.text)
+    # cmd = copy.deepcopy(cmdOpt)
+    # cmd.req = request
+    # scan(cmd)
+    pass
+
+
 def traversal(request: Request):
     visited = set()
     q = Queue()
     q.put(request)
-    while q.not_empty:
+    while q.qsize() > 0:
         curReq: Request = q.get()
         # 防止重复遍历
         item = parseUrl(curReq).path
-        if item in set:
+        if item in visited or not requestFilter(request, curReq):
             continue
-        # 遍历当前节点(扫描漏洞)
+        print("scan for ---> {url}".format(url=curReq.rawUrl))
+        # # 遍历当前节点(扫描漏洞)
         visited.add(item)
         # 先进行一次简单的请求，查看注入点 & 进行link的search
         curNormalResponse = get(curReq)
-        request: Request = buildRequest(curNormalResponse.text)
-        cmd = copy.deepcopy(cmdOpt)
-        cmd.req = request
-        scan(cmd)
+        # 为当前节点扫描XSS
+        scanXssForCurNode(curNormalResponse)
         # 添加子节点
         children: list[Request] = getChildNodes(curNormalResponse.text, request)
         for child in children:
