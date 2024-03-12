@@ -84,12 +84,18 @@ def findAllInputs(tag: Tag):
         return False
 
 
+def findALlTypes(tag: Tag):
+    if tag.name == 'input':
+        return 'type' in tag.attrs and tag.attrs['type'] == 'submit'
+
+
 # 对给定的url解析出参数类型。
-def buildRequest(req: Request, responseText: str) -> Request:
+def buildRequest(req: Request, responseText: str) -> list[Request]:
     bs = BeautifulSoup(responseText, "html.parser")
     forms = bs.find_all(name="form")
-    req = copy.deepcopy(req)
+    res: list[Request] = []
     for form in forms:
+        req = copy.deepcopy(req)
         attr: dict[str, str] = form.attrs
         if 'method' in attr.keys():
             # Method
@@ -103,18 +109,28 @@ def buildRequest(req: Request, responseText: str) -> Request:
             req.parseUrl()
             # params
             params: dict[str, str] = dict()
-            for tag in form.find_all(findAllInputs):
-                attr: dict[str, str] = tag.attrs
-                if 'name' in attr.keys():
-                    params[attr['name']] = ''
-            if req.method:
-                req.params = params
-            else:
-                req.data = params
-            req.convertParams()
-        else:
-            return Request()
-    return req
+            submits = form.find_all(findALlTypes)
+            for submit in submits:
+                newReq = copy.deepcopy(req)
+                # add Normal kv
+                for tag in form.find_all(findAllInputs):
+                    attr: dict[str, str] = tag.attrs
+                    if 'name' in attr.keys():
+                        params[attr['name']] = ''
+                if newReq.method:
+                    newReq.params = params
+                else:
+                    newReq.data = params
+                newReq.convertParams()
+                # add submit kv
+                submitAttrs = submit.attrs
+                fixParams = {}
+                if 'name' in submitAttrs.keys() and 'value' in submitAttrs.keys():
+                    fixParams[submitAttrs['name']] = submitAttrs['value']
+                    pass
+                newReq.fixParams = fixParams
+                res.append(newReq)
+    return res
 
 
 def parseUrl(req: Request) -> ParseResult:
@@ -169,11 +185,11 @@ def requestFilter(primary: Request, curReq: Request) -> bool:
 
 
 def scanXssForCurNode(req, curNormalResponse: Response):
-    request: Request = buildRequest(req, curNormalResponse.text)
-    cmd = copy.deepcopy(cmdOpt)
-    cmd.req = request
-    scan(cmd)
-    pass
+    reqs: list[Request] = buildRequest(req, curNormalResponse.text)
+    for request in reqs:
+        cmd = copy.deepcopy(cmdOpt)
+        cmd.req = request
+        scan(cmd)
 
 
 # 广度优先遍历

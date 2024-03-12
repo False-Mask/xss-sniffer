@@ -22,5 +22,6 @@ if __name__ == '__main__':
     req.header = {
         "Cookie": "language=en; security=low; PHPSESSID=4499bd47c63e45b14b79a6f70fc2b907"
     }
-    newReq = buildRequest(req, get(req).text)
-    print("url: {url}\nparams: {params}".format(url=newReq.rawUrl, params=str(newReq.convertedParams)))
+    newReqs = buildRequest(req, get(req).text)
+    for newReq in newReqs:
+        print("url: {url}\nparams: {params}".format(url=newReq.rawUrl, params=str(newReq.convertedParams)))

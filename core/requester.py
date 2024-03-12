@@ -26,7 +26,7 @@ def requester(request: Request) -> RequestResult:
     delay = request.delay
     header = request.header
     url = request.url
-    data = request.convertedParams
+    data = request.getFullParams()
     timeout = request.timeout
 
     time.sleep(delay)
@@ -55,7 +55,7 @@ def requester(request: Request) -> RequestResult:
         if method:
             response = requests.get(url, params=data, headers=header,
                                     timeout=timeout, verify=False, proxies=core.conf.proxies)
-        elif getVar('jsonData'):
+        elif getVar('jsonData'):  # TODO 兼容JSON
             response = requests.post(url, json=data, headers=header,
                                      timeout=timeout, verify=False, proxies=core.conf.proxies)
         else:

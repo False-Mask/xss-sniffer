@@ -14,12 +14,21 @@ class Request:
         self.timeout: int = 0
         # 转换后的参数
         self.convertedParams: dict = dict()
+        # 不需要爆破的 kv 参数列表
+        self.fixParams: dict[str, str] = dict()
 
     def convertParams(self):
         if self.method:
             self.convertedParams = copy.deepcopy(self.params)
         else:
             self.convertedParams = copy.deepcopy(self.data)
+
+    def getFullParams(self):
+        full: dict[str, str] = self.convertedParams
+        # addFull
+        for (k, v) in self.fixParams.items():
+            full[k] = v
+        return full
 
     def parseUrl(self):
         if self.rawUrl.find('?') > 0:

@@ -221,7 +221,7 @@ def request(req: Request, res: RequestResult) -> str:
 
     # if this is post we need to post and refresh
     if not req.method:
-        v = requests.post(url, data=req.convertedParams, headers=req.header,
+        v = requests.post(url, data=req.getFullParams(), headers=req.header,
                       timeout=timeout, verify=False, proxies=core.conf.proxies)
         browser.refresh()
 
