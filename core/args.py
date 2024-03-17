@@ -17,11 +17,11 @@ def parse() -> CmdOpt:
     parser.add_argument('-u', '--url', help='url', dest='target')
     parser.add_argument('--data', help='post data', dest='paramData')
     parser.add_argument('-e', '--encode', help='encode payloads', dest='encode')
-    parser.add_argument('--fuzzer', help='fuzzer', dest='fuzz', action='store_true')
+    parser.add_argument('--fuzz', help='guess the params', dest='fuzz', action='store_true')
     parser.add_argument('--update', help='update', dest='update', action='store_true')
     parser.add_argument('--timeout', help='timeout', dest='timeout', type=int, default=conf.timeout)
     parser.add_argument('--proxy', help='use prox(y|ies)', dest='proxy', action='store_true')
-    parser.add_argument('--crawl', help='crawl', dest='recursive', action='store_true')
+    parser.add_argument('--crawl', help='traversal the url to find all xss', dest='crawl', action='store_true')
     parser.add_argument('--json', help='treat post data as json', dest='jsonData', action='store_true')
     parser.add_argument('--path', help='inject payloads in the path', dest='path', action='store_true')
     parser.add_argument('--seeds', help='load crawling seeds from a file', dest='args_seeds')
@@ -34,7 +34,6 @@ def parse() -> CmdOpt:
                         default=conf.delay)
     parser.add_argument('--skip', help='don\'t ask to continue', dest='skip', action='store_true')
     parser.add_argument('--skip-dom', help='skip dom checking', dest='skipDOM', action='store_true')
-    parser.add_argument('--blind', help='inject blind XSS payload while crawling', dest='blindXSS', action='store_true')
     parser.add_argument('--console-log-level', help='Console logging level', dest='console_log_level',
                         default=conf.console_log_level, choices=conf.log_config.keys())
     parser.add_argument('--file-log-level', help='File logging level', dest='file_log_level',
@@ -76,6 +75,10 @@ def initCmdOpt(cmd: CmdOpt, req: Request):
     core.conf.console_log_level = args.console_log_level
     core.conf.file_log_level = args.file_log_level
     core.conf.log_file = args.log_file
+    # crawl
+    cmd.crawl = args.crawl
+
+    cmd.fuzz = args.fuzz
 
     global cmdOpt
     cmdOpt = cmd

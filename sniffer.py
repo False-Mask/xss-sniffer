@@ -1,6 +1,6 @@
 from core import args
 from env import checker
-from core.scanner import scan
+from core.scanner import doScan, Mode
 
 # 打印
 print("xss sniffer")
@@ -8,5 +8,11 @@ print("xss sniffer")
 checker.check()
 # parse args
 cmd = args.parse()
-scan(cmd)
+
+mode: Mode = Mode.NORMAL
+if cmd.crawl:
+    mode = Mode.CRAWL
+elif cmd.fuzz:
+    mode = Mode.FUZZ
+doScan(mode)
 

@@ -29,14 +29,19 @@ logger = setup_logger(__name__)
 
 
 class Mode(Enum):
-    SINGLE_FUZZ = 1
+    FUZZ = 1
     BRUTE_FORCER = 2
     NORMAL = 3
-    SCRAWL = 4
+    CRAWL = 4
 
 
-# def scan(mode: Mode):
-#     pass
+def doScan(mode: Mode):
+    if mode == Mode.CRAWL:
+        traversal(cmdOpt.req)
+    elif mode == Mode.NORMAL:
+        scan(cmdOpt)
+    elif mode == Mode.FUZZ:
+        fuzzy(cmdOpt)
 
 
 # TODO
@@ -192,6 +197,10 @@ def scanXssForCurNode(req, curNormalResponse: Response):
         scan(cmd)
 
 
+def fuzzy(cmd: CmdOpt):
+    scanXssForCurNode(cmd.req, get(cmd.req))
+
+
 # 广度优先遍历
 def traversal(request: Request):
     visited = set()
@@ -229,15 +238,15 @@ def scan(cmd: CmdOpt):
     response = responseRes.content
     skip = cmd.skip
     # dom
-    if not skipDOM:
-        logger.run('Checking for DOM vulnerabilities')
-        highlighted = dom(response)
-        if highlighted:
-            logger.good('Potentially vulnerable objects found')
-            logger.red_line(level='good')
-            for line in highlighted:
-                logger.no_format(line, level='good')
-            logger.red_line(level='good')
+    # if not skipDOM:
+    #     logger.run('Checking for DOM vulnerabilities')
+    #     highlighted = dom(response)
+    #     if highlighted:
+    #         logger.good('Potentially vulnerable objects found')
+    #         logger.red_line(level='good')
+    #         for line in highlighted:
+    #             logger.no_format(line, level='good')
+    #         logger.red_line(level='good')
     host = urlparse(target).netloc  # Extracts host out of the url
     # log ==> scan
     logger.debug('Host to scan: {}'.format(host))
@@ -262,12 +271,12 @@ def scan(cmd: CmdOpt):
         positions = occurences.keys()
         logger.debug('Scan occurences: {}'.format(occurences))
         if not occurences:
-            logger.error('No reflection found')
+            logger.error('No XSS Inject Position found')
             # continue
         else:
-            logger.info('Reflections found: %i' % len(occurences))
+            logger.info('XSS Inject Position found: %i' % len(occurences))
 
-        logger.run('Analysing reflections')
+        logger.run('XSS Injecting !!!')
         efficiencies = filterChecker(cmdCopy, occurences)
         logger.debug('Scan efficiencies: {}'.format(efficiencies))
         logger.run('Generating payloads')
