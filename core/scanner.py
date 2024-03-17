@@ -216,13 +216,16 @@ def traversal(request: Request):
         # # 遍历当前节点(扫描漏洞)
         visited.add(item)
         # 先进行一次简单的请求，查看注入点 & 进行link的search
-        curNormalResponse = get(curReq)
         # 为当前节点扫描XSS
-        scanXssForCurNode(curReq, curNormalResponse)
-        # 添加子节点
-        children: list[Request] = getChildNodes(curNormalResponse.text, request)
-        for child in children:
-            q.put(child)
+        try:
+            curNormalResponse = get(curReq)
+            scanXssForCurNode(curReq, curNormalResponse)
+            # 添加子节点
+            children: list[Request] = getChildNodes(curNormalResponse.text, request)
+            for child in children:
+                q.put(child)
+        except Exception as e:
+            print(e)
 
 
 def scan(cmd: CmdOpt):
