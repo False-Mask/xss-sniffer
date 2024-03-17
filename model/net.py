@@ -50,3 +50,4 @@ class RequestResult:
     def __init__(self):
         self.content = ""
         self.check = False
+        self.useSelenium = False

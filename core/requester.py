@@ -65,6 +65,7 @@ def requester(request: Request) -> RequestResult:
 
     # 开启sele进行扫描
     else:
+        res.useSelenium = True
         client.initClient(cmdOpt)
         client.request(request, res)
     return res

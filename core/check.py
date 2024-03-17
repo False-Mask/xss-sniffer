@@ -19,8 +19,12 @@ def checker(cmd: CmdOpt, payload, positions):
     reqCopy.convertedParams = replaceValue(params, xsschecker, checkString, copy.deepcopy)
     responseRes = requester(reqCopy)
     # selenium check通过
-    if responseRes.check:
-        return [100]
+    if responseRes.useSelenium:
+        if responseRes.check:
+            return [100]
+        else:
+            return []
+    # requester 请求
     response = responseRes.content.lower()
     reflectedPositions = []
     for match in re.finditer('st4r7s', response):
