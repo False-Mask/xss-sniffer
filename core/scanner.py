@@ -173,9 +173,8 @@ def getChildNodes(responseText: str, request: Request) -> list[Request]:
     return res
 
 
-def get(curReq: Request) -> Response:
-    return requests.get(curReq.rawUrl, params=curReq.convertedParams, headers=curReq.header, timeout=timeout,
-                        verify=False, proxies=core.conf.proxies)
+def get(curReq: Request) -> str:
+    return requester(curReq).content
 
 
 # 过滤不必要的请求
@@ -188,8 +187,8 @@ def requestFilter(primary: Request, curReq: Request) -> bool:
         return False
 
 
-def scanXssForCurNode(req, curNormalResponse: Response):
-    reqs: list[Request] = buildRequest(req, curNormalResponse.text)
+def scanXssForCurNode(req:Request , resText: str):
+    reqs: list[Request] = buildRequest(req, resText)
     for request in reqs:
         cmd = copy.deepcopy(cmdOpt)
         cmd.req = request
@@ -220,10 +219,10 @@ def traversal(request: Request):
         # 先进行一次简单的请求，查看注入点 & 进行link的search
         # 为当前节点扫描XSS
         try:
-            curNormalResponse = get(curReq)
-            scanXssForCurNode(curReq, curNormalResponse)
+            resText = get(curReq)
+            scanXssForCurNode(curReq, resText)
             # 添加子节点
-            children: list[Request] = getChildNodes(curNormalResponse.text, request)
+            children: list[Request] = getChildNodes(resText, request)
             for child in children:
                 q.put(child)
         except Exception as e:
