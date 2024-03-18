@@ -27,15 +27,30 @@ class Mode(Enum):
     BRUTE_FORCER = 2
     NORMAL = 3
     CRAWL = 4
+    SEEDS = 5
 
 
 def doScan(mode: Mode):
     if mode == Mode.CRAWL:
-        traversal(cmdOpt.req)
+        traversalScan(cmdOpt.req)
+    elif mode == Mode.SEEDS:
+        seedsScan(cmdOpt)
     elif mode == Mode.NORMAL:
-        scan(cmdOpt)
+        normalScan(cmdOpt)
     elif mode == Mode.FUZZ:
-        fuzzy(cmdOpt)
+        fuzzyScan(cmdOpt)
+
+
+def seedsScan(cmd: CmdOpt):
+    seedsFile = cmd.args_seeds
+    with open(seedsFile) as file:
+        url = file.readline()
+
+        req: Request = copy.deepcopy(cmd.req)
+        req.rawUrl = url
+        req.parseUrl()
+        req.convertParams()
+        scanXssForReq(req)
 
 
 def findAllInputs(tag: Tag):
@@ -145,18 +160,18 @@ def scanXssForCurNode(req: Request, resText: str):
     for request in reqs:
         cmd = copy.deepcopy(cmdOpt)
         cmd.req = request
-        scan(cmd)
+        normalScan(cmd)
     if len(reqs) == 0:
         logger.run(" No parameters to test.")
     logger.no_format('')
 
 
-def fuzzy(cmd: CmdOpt):
+def fuzzyScan(cmd: CmdOpt):
     scanXssForCurNode(cmd.req, get(cmd.req))
 
 
 # 广度优先遍历
-def traversal(request: Request):
+def traversalScan(request: Request):
     visited = set()
     q = Queue()
     q.put(request)
@@ -180,6 +195,10 @@ def traversal(request: Request):
                 q.put(child)
         except Exception as e:
             print(e)
+
+
+def scanXssForReq(curReq: Request):
+    scanXssForCurNode(curReq, get(curReq))
 
 
 def scanUseSele(cmd: CmdOpt):
@@ -338,7 +357,7 @@ def scanUseRequests(cmd: CmdOpt):
         logger.no_format('')
 
 
-def scan(cmd: CmdOpt):
+def normalScan(cmd: CmdOpt):
     req = cmd.req
     target = req.rawUrl
     url = req.url

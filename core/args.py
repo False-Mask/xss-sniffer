@@ -77,8 +77,10 @@ def initCmdOpt(cmd: CmdOpt, req: Request):
     core.conf.log_file = args.log_file
     # crawl
     cmd.crawl = args.crawl
-
+    # fuzz mode
     cmd.fuzz = args.fuzz
+    # seeds
+    cmd.args_seeds = args.args_seeds
 
     global cmdOpt
     cmdOpt = cmd

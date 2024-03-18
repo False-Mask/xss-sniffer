@@ -15,3 +15,5 @@ class CmdOpt:
         self.crawl: bool = False
         # fuzz
         self.fuzz: bool = False
+        # seeds file
+        self.args_seeds: str = ''
