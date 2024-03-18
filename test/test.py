@@ -1,4 +1,4 @@
-from core.mygenerator import *
+from core.generator import *
 
 occ = dict()
 occ[2794] = {

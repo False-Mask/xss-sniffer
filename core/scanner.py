@@ -14,7 +14,7 @@ from enum import Enum
 
 from model.net import Request
 from model.opt import CmdOpt
-from . import mygenerator
+from . import generator
 import re
 
 from .args import cmdOpt
@@ -140,7 +140,7 @@ def requestFilter(primary: Request, curReq: Request) -> bool:
         return False
 
 
-def scanXssForCurNode(req:Request , resText: str):
+def scanXssForCurNode(req: Request, resText: str):
     reqs: list[Request] = buildRequest(req, resText)
     for request in reqs:
         cmd = copy.deepcopy(cmdOpt)
@@ -187,7 +187,6 @@ def scanUseSele(cmd: CmdOpt):
     req = cmd.req
     method = req.method
     target = req.rawUrl
-    url = req.url
     params = req.convertedParams
     encoding = cmd.encoding
     logger.debug('Scan target: {}'.format(target))
@@ -206,7 +205,6 @@ def scanUseSele(cmd: CmdOpt):
 
         # check occurence
         occurences = htmlParser(responseText, encoding)
-        positions = occurences.keys()
         logger.debug('Scan occurences: {}'.format(occurences))
         if not occurences:
             logger.error('No XSS Inject Position found')
@@ -217,7 +215,7 @@ def scanUseSele(cmd: CmdOpt):
         # Generate Payloads
         logger.run('XSS Injecting !!!')
         logger.run('Generating payloads')
-        vectors = mygenerator.generate(responseText)
+        vectors = generator.generate(responseText)
         total = len(vectors)
         if total == 0:
             logger.error('No vectors were crafted.')
@@ -262,7 +260,6 @@ def scanUseRequests(cmd: CmdOpt):
     req = cmd.req
     method = req.method
     target = req.rawUrl
-    url = req.url
     params = req.convertedParams
     encoding = cmd.encoding
     logger.debug('Scan target: {}'.format(target))
@@ -305,7 +302,7 @@ def scanUseRequests(cmd: CmdOpt):
         efficiencies = filterChecker(cmdCopy, occurences)
         logger.debug('Scan efficiencies: {}'.format(efficiencies))
         logger.run('Generating payloads')
-        vectors = mygenerator.generate(responseText)
+        vectors = generator.generate(responseText)
         total = len(vectors)
         if total == 0:
             logger.error('No vectors were crafted.')
@@ -343,13 +340,10 @@ def scanUseRequests(cmd: CmdOpt):
 
 def scan(cmd: CmdOpt):
     req = cmd.req
-    method = req.method
     target = req.rawUrl
     url = req.url
     params = req.convertedParams
-    encoding = cmd.encoding
     logger.debug('Scan target: {}'.format(target))
-    skip = cmd.skip
     host = urlparse(target).netloc  # Extracts host out of the url
 
     # check for params
@@ -389,7 +383,7 @@ def dom(response):
                         for controlledVariable in allControlledVariables:
                             if controlledVariable in part:
                                 controlledVariables.add(
-                                    re.search(r'[a-zA-Z$_][a-zA-Z0-9$_]+', part).group().replace('$',  '\$'))
+                                    re.search(r'[a-zA-Z$_][a-zA-Z0-9$_]+', part).group().replace('$',  r'\$'))
                 pattern = re.finditer(sources, newLine)
                 for grp in pattern:
                     if grp:
@@ -399,7 +393,7 @@ def dom(response):
                                 for part in parts:
                                     if source in part:
                                         controlledVariables.add(
-                                            re.search(r'[a-zA-Z$_][a-zA-Z0-9$_]+', part).group().replace('$', '\$'))
+                                            re.search(r'[a-zA-Z$_][a-zA-Z0-9$_]+', part).group().replace('$', r'\$'))
                             line = line.replace(source, yellow + source + end)
                 for controlledVariable in controlledVariables:
                     allControlledVariables.add(controlledVariable)
