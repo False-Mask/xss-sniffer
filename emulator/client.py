@@ -4,6 +4,8 @@ from typing import Dict, Any, Type
 import requests
 from selenium import webdriver
 from selenium.common import UnexpectedAlertPresentException, WebDriverException, NoAlertPresentException
+from selenium.webdriver.common.by import By
+from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.remote.errorhandler import ErrorHandler, ErrorCode, ExceptionMapping
 
@@ -11,6 +13,8 @@ import core
 from core.conf import timeout
 from model.net import Request, RequestResult
 from model.opt import CmdOpt
+
+from bs4 import BeautifulSoup, Tag, ResultSet
 
 browser: webdriver.Chrome
 wait: WebDriverWait
@@ -224,8 +228,16 @@ def request(req: Request, res: RequestResult) -> str:
 
     # put value
     res.content = browser.page_source
-    res.check = browser.execute_script("return hacked")
     return res.content
 
+
+def triggerPayload(payload: str):
+    elements: list[WebElement] = browser.find_elements(By.XPATH, "//a[@href='javascript:hack()']")
+    for element in elements:
+        element.click()
+
+
+def check(res: RequestResult):
+    res.check = browser.execute_script("return hacked")
 
 

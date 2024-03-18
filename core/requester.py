@@ -14,7 +14,7 @@ logger = setup_logger(__name__)
 warnings.filterwarnings('ignore')  # Disable SSL related warnings
 
 
-def requester(request: Request) -> RequestResult:
+def requester(request: Request, payload: str = None) -> RequestResult:
     # if getVar('jsonData'):
     #     data = converter(data)
     # elif getVar('path'):
@@ -68,5 +68,7 @@ def requester(request: Request) -> RequestResult:
         res.useSelenium = True
         client.initClient(cmdOpt)
         client.request(request, res)
+        client.triggerPayload(payload)
+        client.check(res)
     return res
 

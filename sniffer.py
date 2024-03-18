@@ -22,5 +22,7 @@ if cmd.crawl:
     mode = Mode.CRAWL
 elif cmd.fuzz:
     mode = Mode.FUZZ
+elif cmd.args_seeds:
+    mode = Mode.SEEDS
 doScan(mode)
 

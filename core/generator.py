@@ -120,6 +120,7 @@ def htmlType() -> list[str]:
                 fakePayload.attrs = {
                     "href": payload
                 }
+                fakePayload.string = ' '
             elif fake == 'form':
                 fakePayload.attrs = {
                     "action": payload
@@ -165,11 +166,12 @@ def attrType(info: LocationInfo, responseText: str) -> list[str]:
         for m in malicious:
             res.append("javascript:" + m)
     # 闭合
-    raw = htmlType()
-    spacer = ['"', "'"]
-    for space in spacer:
-        for e in raw:
-            res.append(space + ">" + e + "//")
+    for attrTag in tags:
+        raw = htmlType()
+        spacer = ['"', "'"]
+        for space in spacer:
+            for e in raw:
+                res.append((space + "</{url}>" + e + "//").format(url=attrTag.name))
 
     return res
 

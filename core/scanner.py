@@ -44,18 +44,21 @@ def doScan(mode: Mode):
 def seedsScan(cmd: CmdOpt):
     seedsFile = cmd.args_seeds
     with open(seedsFile) as file:
-        url = file.readline()
-
-        req: Request = copy.deepcopy(cmd.req)
-        req.rawUrl = url
-        req.parseUrl()
-        req.convertParams()
-        scanXssForReq(req)
+        url: str = file.readline()
+        while url:
+            req: Request = copy.deepcopy(cmd.req)
+            req.rawUrl = url
+            req.parseUrl()
+            req.convertParams()
+            print("scan for ---> {url}".format(url=req.rawUrl))
+            scanXssForReq(req)
+            url = file.readline()
 
 
 def findAllInputs(tag: Tag):
     if tag.name == 'input':
-        return 'type' in tag.attrs and tag.attrs['type'] == 'text'
+        return ('type' in tag.attrs and tag.attrs['type'] == 'text' or
+                'type' not in tag.attrs)
     elif tag.name in ['textarea', 'select']:
         return True
     else:
@@ -262,7 +265,7 @@ def scanUseSele(cmd: CmdOpt):
             reqCopy = copy.deepcopy(cmdCopy.req)
 
             reqCopy.convertedParams = replaceValue(params, xsschecker, checkString, copy.deepcopy)
-            responseRes = requester(reqCopy)
+            responseRes = requester(reqCopy, payload=vect)
             # selenium check通过
             if responseRes.check:
                 logger.red_line()
