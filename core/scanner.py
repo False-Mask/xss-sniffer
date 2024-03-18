@@ -2,18 +2,13 @@ import copy
 from queue import Queue
 from urllib.parse import urlparse, unquote, ParseResult, urljoin
 from bs4 import BeautifulSoup, Tag, ResultSet
-import requests
-from requests import Response
-
-import core
 from core import conf
 from core.check import filterChecker, checker
 from core.colors import *
-from core.conf import xsschecker, minEfficiency, timeout
-from core.fuzzer import fuzzer
+from core.conf import xsschecker, minEfficiency
 from core.htmlParser import htmlParser
 from core.requester import requester
-from core.utils import getUrl, getParams, replaceValue
+from core.utils import replaceValue
 from core.log import setup_logger
 from enum import Enum
 
@@ -41,42 +36,6 @@ def doScan(mode: Mode):
         scan(cmdOpt)
     elif mode == Mode.FUZZ:
         fuzzy(cmdOpt)
-
-
-# TODO
-def singleFuzz(target, paramData, encoding, headers, delay, timeout):
-    GET, POST = (False, True) if paramData else (True, False)
-    # If the user hasn't supplied the root url with http(s), we will handle it
-    if not target.startswith('http'):
-        try:
-            response = requester('https://' + target, {},
-                                 headers, GET, delay, timeout)
-            target = 'https://' + target
-        except:
-            target = 'http://' + target
-    logger.debug('Single Fuzz target: {}'.format(target))
-    host = urlparse(target).netloc  # Extracts host out of the url
-    logger.debug('Single fuzz host: {}'.format(host))
-    url = getUrl(target, GET)
-    logger.debug('Single fuzz url: {}'.format(url))
-    params = getParams(target, paramData, GET)
-    logger.debug_json('Single fuzz params:', params)
-    if not params:
-        logger.error('No parameters to test.')
-        quit()
-    # WAF = wafDetector(
-    #     url, {list(params.keys())[0]: xsschecker}, headers, GET, delay, timeout)
-    # if WAF:
-    #     logger.error('WAF detected: %s%s%s' % (green, WAF, end))
-    # else:
-    #     logger.good('WAF Status: %sOffline%s' % (green, end))
-
-    for paramName in params.keys():
-        logger.info('Fuzzing parameter: %s' % paramName)
-        paramsCopy = copy.deepcopy(params)
-        paramsCopy[paramName] = xsschecker
-        fuzzer(url, paramsCopy, headers, GET,
-               delay, timeout, encoding)
 
 
 def findAllInputs(tag: Tag):
@@ -147,12 +106,6 @@ def findUrl(tag: Tag) -> bool:
         if not link.startswith('#'):
             return True
     return False
-
-
-def close(url):
-    if url[len(url) - 1] != '/':
-        return url + '/'
-    return url
 
 
 def getChildNodes(responseText: str, request: Request) -> list[Request]:

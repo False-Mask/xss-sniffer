@@ -85,15 +85,6 @@ def extractHeaders(headers):
 
 
 def replaceValue(mapping, old, new, strategy=None):
-    """
-    Replace old values with new ones following dict strategy.
-
-    The parameter strategy is None per default for inplace operation.
-    A copy operation is injected via strateg values like copy.copy
-    or copy.deepcopy
-
-    Note: A dict is returned regardless of modifications.
-    """
     anotherMap = strategy(mapping) if strategy else mapping
     if old in anotherMap.values():
         for k in anotherMap.keys():
