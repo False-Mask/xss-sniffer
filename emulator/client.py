@@ -128,13 +128,10 @@ def initClient(cmd: CmdOpt):
     code = """
     hacked = false
     
-    window.alert = function(message) {
-    hacked = true
-    };
-    
-    window.confirm = function (message) {
-    hacked = true
-    }"""
+    function hack() {
+        hacked = true
+    }
+    """
     browser.execute_cdp_cmd('Page.addScriptToEvaluateOnNewDocument', {"source": code})
     # browser.error_handler = ClientErrorHandler()
     global wait

@@ -1,3 +1,5 @@
+import base64
+
 from core.generator import *
 
 occ = dict()
@@ -63,4 +65,6 @@ if __name__ == '__main__':
                 print(info.t, info.tags)
 
 
-    testGene()
+    # testGene()
+    base = base64.b64encode('hack()'.encode('utf-8'))
+    print(base)
