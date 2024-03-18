@@ -1,6 +1,6 @@
 import copy
 from queue import Queue
-from urllib.parse import urlparse, unquote, urlunparse, ParseResult, urljoin
+from urllib.parse import urlparse, unquote, ParseResult, urljoin
 from bs4 import BeautifulSoup, Tag, ResultSet
 import requests
 from requests import Response
@@ -11,10 +11,9 @@ from core.check import filterChecker, checker
 from core.colors import *
 from core.conf import xsschecker, minEfficiency, timeout
 from core.fuzzer import fuzzer
-from core.generator import generator
 from core.htmlParser import htmlParser
 from core.requester import requester
-from core.utils import getUrl, getParams
+from core.utils import getUrl, getParams, replaceValue
 from core.log import setup_logger
 from enum import Enum
 
@@ -195,6 +194,9 @@ def scanXssForCurNode(req, curNormalResponse: Response):
         cmd = copy.deepcopy(cmdOpt)
         cmd.req = request
         scan(cmd)
+    if len(reqs) == 0:
+        logger.run(" No parameters to test.")
+    logger.no_format('')
 
 
 def fuzzy(cmd: CmdOpt):
@@ -228,38 +230,106 @@ def traversal(request: Request):
             print(e)
 
 
-def scan(cmd: CmdOpt):
+def scanUseSele(cmd: CmdOpt):
+
     req = cmd.req
     method = req.method
     target = req.rawUrl
     url = req.url
     params = req.convertedParams
-    skipDOM = cmd.skipDOM
     encoding = cmd.encoding
     logger.debug('Scan target: {}'.format(target))
+    skip = cmd.skip
+
+    for paramName in params.keys():
+        cmdCopy = copy.deepcopy(cmd)
+        logger.info('Testing parameter: %s' % paramName)
+        if encoding:
+            cmdCopy.req.convertedParams[paramName] = encoding(xsschecker)
+        else:
+            cmdCopy.req.convertedParams[paramName] = xsschecker
+
+        responseRes = requester(cmdCopy.req)
+        responseText = responseRes.content
+
+        # check occurence
+        occurences = htmlParser(responseText, encoding)
+        positions = occurences.keys()
+        logger.debug('Scan occurences: {}'.format(occurences))
+        if not occurences:
+            logger.error('No XSS Inject Position found')
+            continue
+        else:
+            logger.info('XSS Inject Position found: %i' % len(occurences))
+
+        # Generate Payloads
+        logger.run('XSS Injecting !!!')
+        logger.run('Generating payloads')
+        vectors = mygenerator.generate(responseText)
+        total = len(vectors)
+        if total == 0:
+            logger.error('No vectors were crafted.')
+            continue
+        logger.info('Payloads generated: %i' % total)
+        progress = 0
+
+        # 进行攻击
+        for vect in vectors:
+            if conf.globalVariables['path']:
+                vect = vect.replace('/', '%2F')
+            loggerVector = vect
+            progress += 1
+            logger.run('Progress: %i/%i\r' % (progress, total))
+            if not method:
+                vect = unquote(vect)
+
+            req = cmdCopy.req
+            params = req.convertedParams
+            encoding = cmdCopy.encoding
+
+            checkString = 'st4r7s' + vect + '3nd'
+            if encoding:
+                checkString = encoding(unquote(checkString))
+            reqCopy = copy.deepcopy(cmdCopy.req)
+
+            reqCopy.convertedParams = replaceValue(params, xsschecker, checkString, copy.deepcopy)
+            responseRes = requester(reqCopy)
+            # selenium check通过
+            if responseRes.check:
+                logger.red_line()
+                logger.good('Payload: %s' % loggerVector)
+                if not skip:
+                    choice = input(
+                        '%s Would you like to continue scanning? [y/N] ' % que).lower()
+                    if choice != 'y':
+                        return
+        logger.no_format('')
+
+
+def scanUseRequests(cmd: CmdOpt):
+    req = cmd.req
+    method = req.method
+    target = req.rawUrl
+    url = req.url
+    params = req.convertedParams
+    encoding = cmd.encoding
+    logger.debug('Scan target: {}'.format(target))
+    skip = cmd.skip
     responseRes = requester(req)
     response = responseRes.content
-    skip = cmd.skip
-    # dom
-    # if not skipDOM:
-    #     logger.run('Checking for DOM vulnerabilities')
-    #     highlighted = dom(response)
-    #     if highlighted:
-    #         logger.good('Potentially vulnerable objects found')
-    #         logger.red_line(level='good')
-    #         for line in highlighted:
-    #             logger.no_format(line, level='good')
-    #         logger.red_line(level='good')
-    host = urlparse(target).netloc  # Extracts host out of the url
-    # log ==> scan
-    logger.debug('Host to scan: {}'.format(host))
-    logger.debug('Url to scan: {}'.format(url))
-    logger.debug_json('Scan parameters:', params)
-    # log ==> scan
+    skipDOM = cmd.skipDOM
+    # check dom
+    if not skipDOM:
+        logger.run('Checking for DOM vulnerabilities')
+        highlighted = dom(response)
+        if highlighted:
+            logger.good('Potentially vulnerable objects found')
+            logger.red_line(level='good')
+            for line in highlighted:
+                logger.no_format(line, level='good')
+            logger.red_line(level='good')
 
-    if not params:
-        logger.error('No parameters to test.')
-        return
+    # 为每个参数进行爆破
     for paramName in params.keys():
         cmdCopy = copy.deepcopy(cmd)
         logger.info('Testing parameter: %s' % paramName)
@@ -275,7 +345,7 @@ def scan(cmd: CmdOpt):
         logger.debug('Scan occurences: {}'.format(occurences))
         if not occurences:
             logger.error('No XSS Inject Position found')
-            # continue
+            continue
         else:
             logger.info('XSS Inject Position found: %i' % len(occurences))
 
@@ -283,7 +353,6 @@ def scan(cmd: CmdOpt):
         efficiencies = filterChecker(cmdCopy, occurences)
         logger.debug('Scan efficiencies: {}'.format(efficiencies))
         logger.run('Generating payloads')
-        # vectors = generator(occurences, responseText)
         vectors = mygenerator.generate(responseText)
         total = len(vectors)
         if total == 0:
@@ -318,6 +387,34 @@ def scan(cmd: CmdOpt):
                 logger.good('Payload: %s' % loggerVector)
                 logger.info('Efficiency: %i' % bestEfficiency)
         logger.no_format('')
+
+
+def scan(cmd: CmdOpt):
+    req = cmd.req
+    method = req.method
+    target = req.rawUrl
+    url = req.url
+    params = req.convertedParams
+    encoding = cmd.encoding
+    logger.debug('Scan target: {}'.format(target))
+    skip = cmd.skip
+    host = urlparse(target).netloc  # Extracts host out of the url
+
+    # check for params
+    if not params:
+        logger.error('No parameters to test.')
+        return
+
+    # log ==> scan
+    logger.debug('Host to scan: {}'.format(host))
+    logger.debug('Url to scan: {}'.format(url))
+    logger.debug_json('Scan parameters:', params)
+    # log ==> scan
+
+    if cmd.useSele:
+        scanUseSele(cmd)
+    else:
+        scanUseRequests(cmd)
 
 
 def dom(response):
