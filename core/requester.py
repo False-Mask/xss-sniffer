@@ -61,7 +61,7 @@ def requester(request: Request) -> RequestResult:
         else:
             response = requests.post(url, data=data, headers=header,
                                      timeout=timeout, verify=False, proxies=core.conf.proxies)
-        res.content = response
+        res.content = response.text
 
     # 开启sele进行扫描
     else:

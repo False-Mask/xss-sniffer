@@ -172,7 +172,7 @@ def traversal(request: Request):
         # 先进行一次简单的请求，查看注入点 & 进行link的search
         # 为当前节点扫描XSS
         try:
-            resText = get(curReq)
+            resText: str = get(curReq)
             scanXssForCurNode(curReq, resText)
             # 添加子节点
             children: list[Request] = getChildNodes(resText, request)
