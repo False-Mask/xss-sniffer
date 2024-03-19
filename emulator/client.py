@@ -3,7 +3,7 @@ from typing import Dict, Any, Type
 
 import requests
 from selenium import webdriver
-from selenium.common import UnexpectedAlertPresentException, WebDriverException, NoAlertPresentException
+from selenium.common import UnexpectedAlertPresentException, WebDriverException
 from selenium.webdriver import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
@@ -238,9 +238,10 @@ def triggerPayload(payload: str):
     for element in elements:
         element.click()
 
-    # focus触发
+    # focus onmouseover触发
     elements: list[WebElement] = browser.find_elements(By.XPATH,
-                                                       "//*[contains(@onfocus, 'hack()') and not(@autofocus)]")
+                                                       "//*[contains(@onfocus, 'hack()') and not(@autofocus)"
+                                                       "or contains(@onmouseover, 'hack()')]")
     for element in elements:
         (ActionChains(browser)
          .move_to_element(element)
