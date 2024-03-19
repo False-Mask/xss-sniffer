@@ -168,14 +168,20 @@ def attrType(info: LocationInfo, responseText: str) -> list[str]:
         elif attrTag.name in ['iframe', 'img'] and re.compile(xsschecker).match(attrTag.attrs['src']):
             addForSpecial = True
 
+    # listener payload
     listeners = [
         'onfocus', 'onmouseover',
     ]
-    # listener payload
-    for listener in listeners:
-        for space in spacer:
-            for m in malicious:
-                res.append((space + f' {listener}={m} ' + space))
+    for attrTag in tags:
+        for listener in listeners:
+            for space in spacer:
+                for m in malicious:
+                    # 闭合type
+                    # 兼容hidden
+                    if "type" in attrTag.attrs and attrTag.attrs['type'] == "hidden":
+                        res.append((space + f' {listener}={m} type ' + space))
+                    else:
+                        res.append((space + f' {listener}={m} ' + space))
 
     # 添加特殊的payload
     if addForSpecial:

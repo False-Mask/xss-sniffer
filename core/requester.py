@@ -68,7 +68,10 @@ def requester(request: Request, payload: str = None) -> RequestResult:
         res.useSelenium = True
         client.initClient(cmdOpt)
         client.request(request, res)
-        client.triggerPayload(payload)
+        try:
+            client.triggerPayload(payload)
+        except Exception as e:
+            print(e)
         client.check(res)
     return res
 

@@ -58,6 +58,7 @@ def seedsScan(cmd: CmdOpt):
 def findAllInputs(tag: Tag):
     if tag.name == 'input':
         return ('type' in tag.attrs and tag.attrs['type'] == 'text' or
+                'type' in tag.attrs and tag.attrs['type'] == 'hidden' or
                 'type' not in tag.attrs)
     elif tag.name in ['textarea', 'select']:
         return True
@@ -78,19 +79,20 @@ def buildRequest(req: Request, responseText: str) -> list[Request]:
     for form in forms:
         req = copy.deepcopy(req)
         attr: dict[str, str] = form.attrs
-        if 'method' in attr.keys():
-            # Method
-            method = attr['method']
-            req.method = method.lower() == 'get'
-            # Url
-            if 'action' not in attr.keys() or attr['action'] in ['#', '']:
-                pass
-            else:
-                req.rawUrl = urljoin(req.rawUrl, attr['action'])
-            req.parseUrl()
-            # params
-            params: dict[str, str] = dict()
-            submits = form.find_all(findALlTypes)
+        # Method
+        method = attr['method'] if 'method' in attr.keys() else 'get'
+        req.method = method.lower() == 'get'
+        # Url
+        if 'action' not in attr.keys() or attr['action'] in ['#', '']:
+            pass
+        else:
+            req.rawUrl = urljoin(req.rawUrl, attr['action'])
+        req.parseUrl()
+        # params
+        params: dict[str, str] = dict()
+        submits = form.find_all(findALlTypes)
+        # 有submit
+        if submits:
             for submit in submits:
                 newReq = copy.deepcopy(req)
                 # add Normal kv
@@ -111,6 +113,18 @@ def buildRequest(req: Request, responseText: str) -> list[Request]:
                     pass
                 newReq.fixParams = fixParams
                 res.append(newReq)
+        else:
+            newReq = copy.deepcopy(req)
+            for tag in form.find_all(findAllInputs):
+                attr: dict[str, str] = tag.attrs
+                if 'name' in attr.keys():
+                    params[attr['name']] = ''
+            if newReq.method:
+                newReq.params = params
+            else:
+                newReq.data = params
+            newReq.convertParams()
+            res.append(newReq)
     return res
 
 
