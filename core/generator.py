@@ -152,6 +152,7 @@ def htmlType() -> list[str]:
 def attrType(info: LocationInfo, responseText: str) -> list[str]:
     res: list[str] = []
     tags = info.tags
+    spacer = ['"', "'"]
 
     # <a href="javascript:alert">
     addForSpecial: bool = False
@@ -161,6 +162,15 @@ def attrType(info: LocationInfo, responseText: str) -> list[str]:
         elif attrTag.name in ['iframe', 'img'] and re.compile(xsschecker).match(attrTag.attrs['src']):
             addForSpecial = True
 
+    listeners = [
+        'onfocus', 'onmouseover',
+    ]
+    # listener payload
+    for listener in listeners:
+        for space in spacer:
+            for m in malicious:
+                res.append((space + f' {listener}={m} ' + space))
+
     # 添加特殊的payload
     if addForSpecial:
         for m in malicious:
@@ -168,7 +178,6 @@ def attrType(info: LocationInfo, responseText: str) -> list[str]:
     # 闭合
     for attrTag in tags:
         raw = htmlType()
-        spacer = ['"', "'"]
         for space in spacer:
             for e in raw:
                 res.append((space + "</{url}>" + e + "//").format(url=attrTag.name))

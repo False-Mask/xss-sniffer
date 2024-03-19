@@ -4,6 +4,7 @@ from typing import Dict, Any, Type
 import requests
 from selenium import webdriver
 from selenium.common import UnexpectedAlertPresentException, WebDriverException, NoAlertPresentException
+from selenium.webdriver import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support.wait import WebDriverWait
@@ -232,9 +233,21 @@ def request(req: Request, res: RequestResult) -> str:
 
 
 def triggerPayload(payload: str):
+    # href 触发
     elements: list[WebElement] = browser.find_elements(By.XPATH, "//a[@href='javascript:hack()']")
     for element in elements:
         element.click()
+
+    # focus触发
+    elements: list[WebElement] = browser.find_elements(By.XPATH,
+                                                       "//*[contains(@onfocus, 'hack()') and not(@autofocus)]")
+    for element in elements:
+        (ActionChains(browser)
+         .move_to_element(element)
+         .click()
+         .perform())
+
+    #
 
 
 def check(res: RequestResult):
