@@ -268,4 +268,14 @@ def escaped(position, string):
         return False
 
 
+def makeEntry(strVal: str) -> list[str]:
+    res = []
+    for i in strVal:
+        res.append(''.join('&#' + hex(ord(i)).replace('0x', 'x') + ';'))
+    return res
+
+
+def randomHtmlEntry(strVal: str) -> str:
+    htmlEntry: list[str] = makeEntry(strVal)
+    return "".join(random.choice((i, j)) for (i, j) in zip(strVal, htmlEntry))
 

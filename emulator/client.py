@@ -15,8 +15,6 @@ from core.conf import timeout
 from model.net import Request, RequestResult
 from model.opt import CmdOpt
 
-from bs4 import BeautifulSoup, Tag, ResultSet
-
 browser: webdriver.Chrome
 wait: WebDriverWait
 
@@ -154,10 +152,10 @@ def buildUrl(req: Request) -> str:
             url += '?'
         # append kv
         for (k, v) in req.convertedParams.items():
-            url += k + "=" + v
+            url += k + "=" + urllib.parse.quote(v) + "&"
     else:  # Post
         pass  # Do nothing
-    return url
+    return url[:len(url) - 1] if url.endswith('&') else url
 
 
 def addCookie(req: Request, url: str):

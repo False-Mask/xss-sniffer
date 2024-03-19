@@ -3,6 +3,8 @@ import re
 from enum import Enum
 from bs4 import BeautifulSoup, Tag, ResultSet, Comment
 
+from .escape import buildEscape
+from .mapper import mapPayloads
 from core.conf import xsschecker
 
 
@@ -71,7 +73,11 @@ malicious = ["hack()"]
 
 
 def generate(text: str) -> list[str]:
-    return generateAllCaseInternal(getLocationInfo(text, xsschecker), text)
+    res: list[str] = generateAllCaseInternal(getLocationInfo(text, xsschecker), text)
+    escape: list[str] = buildEscape(res)
+    payloads: list[str] = mapPayloads(res)
+    payloads.extend(escape)
+    return payloads
 
 
 def htmlType() -> list[str]:

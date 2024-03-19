@@ -259,7 +259,7 @@ def scanUseSele(cmd: CmdOpt):
             params = req.convertedParams
             encoding = cmdCopy.encoding
 
-            checkString = 'st4r7s' + vect + '3nd'
+            checkString = vect
             if encoding:
                 checkString = encoding(unquote(checkString))
             reqCopy = copy.deepcopy(cmdCopy.req)
